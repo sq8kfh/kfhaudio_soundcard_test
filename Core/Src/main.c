@@ -228,7 +228,7 @@ int main(void)
   MX_I2S3_Init();
   MX_I2C1_Init();
   MX_USART2_UART_Init();
-  //MX_USB_OTG_FS_PCD_Init();
+  MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();
 
