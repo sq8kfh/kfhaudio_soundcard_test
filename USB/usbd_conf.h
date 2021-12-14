@@ -43,10 +43,12 @@
 #define COMPOSITE_CDC_CMD_EP                          0x83U  /* EP3 for CDC commands */
 #define COMPOSITE_EP_COUNT                            4
 
+
 #define COMPOSITE_AUDIO_CONTROL_INTERFACE             0x00
 #define COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE       0x01
 #define COMPOSITE_CDC_MODEM_INTERFACE                 0x02
 #define COMPOSITE_CDC_DATA_INTERFACE                  0x03
+
 #define COMPOSITE_INTERFACE_COUNT                     4
 
 

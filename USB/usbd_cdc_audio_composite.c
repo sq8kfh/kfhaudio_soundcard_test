@@ -483,13 +483,13 @@ static uint8_t *USBD_CDC_Audio_Composite_GetCfgDesc (uint16_t *length) {
 __ALIGN_BEGIN static uint8_t USBD_CDC_Audio_Composite_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
     USB_LEN_DEV_QUALIFIER_DESC,
 	USB_DESC_TYPE_DEVICE_QUALIFIER,
-	0x00,
+	0x00,                       /* bcdUSB */
 	0x02,
-	0x00,
-	0x00,
-	0x00,
-	0x40,
-	0x01,
+	0xEF,                       /* bDeviceClass */
+	0x02,                       /* bDeviceSubClass */
+	0x01,                       /* bDeviceProtocol */
+	0x40,                       /* bMaxPacketSize0 */
+	0x00,                       /* bNumConfigurations */
 	0x00,
 };
 

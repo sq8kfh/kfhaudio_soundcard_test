@@ -31,6 +31,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x32,                                                 /* bMaxPower = 100 mA*/
 	/* 09 byte*/
 
+
 	/*
 	 * AUDIO
 	 */
@@ -42,7 +43,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x02,                                                 /* bInterfaceCount */
 	USB_DEVICE_CLASS_AUDIO,                               /* bFunctionClass */
 	0x00,                                                 /* bFunctionSubClass */
-	0x00,                                                 /* bFunctionProtocol */
+	AUDIO_PROTOCOL_UNDEFINED,                             /* bFunctionProtocol */
 	0x04,                                                 /* iFunction */
 	/* 08 byte*/
 
@@ -276,6 +277,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	/* 07 byte*/
 #endif
 
+
+
 	/*
 	 * CDC
 	 */
@@ -286,7 +289,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_CDC_MODEM_INTERFACE,                       /* bFirstInterface */
 	0x02,                                                /* bInterfaceCount */
 	0x02,                                                /* bFunctionClass */
-	0x00,                                                /* bFunctionSubClass */
+	0x02,                                                /* bFunctionSubClass */
 	0x00,                                                /* bFunctionProtocol */
 	0x00,                                                /* iFunction */
 
@@ -335,7 +338,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x03,                                                /* bmAttributes: Interrupt */
 	LOBYTE(CDC_CMD_PACKET_SIZE),                         /* wMaxPacketSize: */
 	HIBYTE(CDC_CMD_PACKET_SIZE),
-	CDC_HS_BINTERVAL,                                    /* bInterval: */
+	CDC_FS_BINTERVAL,                                    /* bInterval: */
 
 	/*Data class interface descriptor*/
 	COMPOSITE_CDC_DATA_INTERFACE_DESC_SIZE,              /* bLength: Endpoint Descriptor size */
@@ -364,5 +367,5 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x02,                                                /* bmAttributes: Bulk */
 	LOBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),                 /* wMaxPacketSize: */
 	HIBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),
-	0x00                                                 /* bInterval: ignore for Bulk transfer */
+	0x00,                                                /* bInterval: ignore for Bulk transfer */
 };
