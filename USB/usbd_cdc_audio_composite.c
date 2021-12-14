@@ -63,6 +63,8 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
 
 // AUDIO
     /* Open EP OUT */
+	pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].bInterval = AUDIO_FS_BINTERVAL;
+
     USBD_LL_OpenEP(pdev, COMPOSITE_AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, AUDIO_OUT_PACKET);
     pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].is_used = 1U;
 
@@ -89,12 +91,14 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     USBD_LL_PrepareReceive(pdev, COMPOSITE_AUDIO_OUT_EP, haudio->buffer, AUDIO_OUT_PACKET);
 
 // CDC
+    pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = CDC_FS_BINTERVAL;
+
     /* Open EP IN */
-    USBD_LL_OpenEP(pdev, COMPOSITE_CDC_IN_EP, USBD_EP_TYPE_BULK, CDC_DATA_HS_IN_PACKET_SIZE);
+    USBD_LL_OpenEP(pdev, COMPOSITE_CDC_IN_EP, USBD_EP_TYPE_BULK, CDC_DATA_FS_IN_PACKET_SIZE);
     pdev->ep_in[COMPOSITE_CDC_IN_EP & 0xFU].is_used = 1U;
 
     /* Open EP OUT */
-    USBD_LL_OpenEP(pdev, COMPOSITE_CDC_OUT_EP, USBD_EP_TYPE_BULK, CDC_DATA_HS_OUT_PACKET_SIZE);
+    USBD_LL_OpenEP(pdev, COMPOSITE_CDC_OUT_EP, USBD_EP_TYPE_BULK, CDC_DATA_FS_OUT_PACKET_SIZE);
     pdev->ep_out[COMPOSITE_CDC_OUT_EP & 0xFU].is_used = 1U;
 
     /* Open EP OUT - CMD */
@@ -131,6 +135,7 @@ static uint8_t  USBD_CDC_Audio_Composite_DeInit (USBD_HandleTypeDef *pdev, uint8
 	  /* Close Command IN EP */
 	USBD_LL_CloseEP(pdev, COMPOSITE_CDC_CMD_EP);
 	pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].is_used = 0U;
+	pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = 0U;
 
 	/* DeInit  physical Interface components */
 	if (pdev->pClassData != NULL) {
@@ -144,6 +149,7 @@ static uint8_t  USBD_CDC_Audio_Composite_DeInit (USBD_HandleTypeDef *pdev, uint8
 	/* Open EP OUT */
 	USBD_LL_CloseEP(pdev, COMPOSITE_AUDIO_OUT_EP);
 	pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].is_used = 0U;
+	pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].bInterval = 0U;
 
 	/* DeInit  physical Interface components */
 	if (pdev->pClassData != NULL) {
@@ -269,8 +275,8 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 					if ((req->wValue >> 8) == AUDIO_DESCRIPTOR_TYPE) {
 						uint16_t len;
 						uint8_t *pbuf;
-						pbuf = USBD_CDC_Audio_Composite_Descriptor + 26;
-					    len = MIN(CDC_AUDIO_COMPOSITE_DESCRIPTOR_SIZE, req->wLength);
+						pbuf = USBD_CDC_Audio_Composite_Descriptor + COMPOSITE_AUDIOCONTROL_HEADER_DESC_SHIFT;
+					    len = MIN(COMPOSITE_AUDIOCONTROL_HEADER_DESC_SIZE, req->wLength);
 
 					    USBD_CtlSendData(pdev, pbuf, len);
 					}
@@ -391,36 +397,46 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 			return USBD_FAIL;
 		}
 	}
-	else {
+	else if (epnum == AUDIO_OUT_EP)
+	  {
 		USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
+	    /* Get received data packet length */
+		uint16_t PacketSize = (uint16_t)USBD_LL_GetRxDataSize(pdev, epnum);
 
-		if (epnum == COMPOSITE_AUDIO_OUT_EP) {
-		    /* Increment the Buffer pointer or roll it back when all buffers are full */
-		    haudio->wr_ptr += AUDIO_OUT_PACKET;
+	    /* Packet received Callback */
+	    ((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->PeriodicTC(&haudio->buffer[haudio->wr_ptr],
+	                                                           PacketSize, AUDIO_OUT_TC);
 
-		    if (haudio->wr_ptr == AUDIO_TOTAL_BUF_SIZE) {
-		    	/* All buffers are full: roll back */
-		    	haudio->wr_ptr = 0U;
+	    /* Increment the Buffer pointer or roll it back when all buffers are full */
+	    haudio->wr_ptr += PacketSize;
 
-		    	if (haudio->offset == AUDIO_OFFSET_UNKNOWN) {
-		    		((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->AudioCmd(&haudio->buffer[0],
-		                                                             AUDIO_TOTAL_BUF_SIZE / 2U,
-		                                                             AUDIO_CMD_START);
-		    		haudio->offset = AUDIO_OFFSET_NONE;
-		    	}
-		    }
+	    if (haudio->wr_ptr == AUDIO_TOTAL_BUF_SIZE)
+	    {
+	      /* All buffers are full: roll back */
+	      haudio->wr_ptr = 0U;
 
-		    if (haudio->rd_enable == 0U) {
-		    	if (haudio->wr_ptr == (AUDIO_TOTAL_BUF_SIZE / 2U)) {
-		    		haudio->rd_enable = 1U;
-		    	}
-		    }
+	      if (haudio->offset == AUDIO_OFFSET_UNKNOWN)
+	      {
+	    	  ((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->AudioCmd(&haudio->buffer[0],
+	                                                             AUDIO_TOTAL_BUF_SIZE / 2U,
+	                                                             AUDIO_CMD_START);
+	        haudio->offset = AUDIO_OFFSET_NONE;
+	      }
+	    }
 
-		    /* Prepare Out endpoint to receive next audio packet */
-		    USBD_LL_PrepareReceive(pdev, COMPOSITE_AUDIO_OUT_EP, &haudio->buffer[haudio->wr_ptr], AUDIO_OUT_PACKET);
-		}
-		return USBD_OK;
-	}
+	    if (haudio->rd_enable == 0U)
+	    {
+	      if (haudio->wr_ptr == (AUDIO_TOTAL_BUF_SIZE / 2U))
+	      {
+	        haudio->rd_enable = 1U;
+	      }
+	    }
+
+	    /* Prepare Out endpoint to receive next audio packet */
+	    (void)USBD_LL_PrepareReceive(pdev, AUDIO_OUT_EP,
+	                                 &haudio->buffer[haudio->wr_ptr],
+	                                 AUDIO_OUT_PACKET);
+	  }
 	return USBD_OK;
 }
 

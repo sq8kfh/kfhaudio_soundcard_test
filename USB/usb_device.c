@@ -75,12 +75,10 @@ void MX_USB_DEVICE_Init(void)
     Error_Handler();
   }
   if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_Composite) != USBD_OK)
-  //if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_AUDIO) != USBD_OK)
   {
     Error_Handler();
   }
   if (USBD_CDC_Audio_Composite_RegisterInterface(&hUsbDeviceFS, &USBD_Interface_fops_FS, &USBD_AUDIO_fops_FS) != USBD_OK)
-  //if (USBD_AUDIO_RegisterInterface(&hUsbDeviceFS, &USBD_AUDIO_fops_FS) != USBD_OK)
   {
     Error_Handler();
   }
