@@ -22,6 +22,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <usbd_cdc_audio_composite.h>
 #include "usbd_cdc_if.h"
+#include "main.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -230,15 +231,15 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     case CDC_SET_CONTROL_LINE_STATE:
     	if (length == 0) {
     		USBD_SetupReqTypedef *req = (USBD_SetupReqTypedef *)pbuf;
-    		/*if(req->wValue & 1)
-    			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET); // zapalenie DTR
+    		if(req->wValue & 1)
+    			HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_SET); // zapalenie DTR
     		else
-    			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET); // zgaszenie DTR
+    			HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_RESET); // zgaszenie DTR
 
     		if(req->wValue & 2)
-    			HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET); // zapalenie RTS
+    			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET); // zapalenie RTS
     		else
-    			HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET); // zgaszenie RTS*/
+    			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET); // zgaszenie RTS
     	}
     break;
 

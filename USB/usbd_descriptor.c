@@ -44,7 +44,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	USB_DEVICE_CLASS_AUDIO,                               /* bFunctionClass */
 	0x00,                                                 /* bFunctionSubClass */
 	AUDIO_PROTOCOL_UNDEFINED,                             /* bFunctionProtocol */
-	0x04,                                                 /* iFunction */
+	0x02,                                                 /* iFunction */
 	/* 08 byte*/
 
 	/* USB Audio Control interface descriptor */
@@ -79,7 +79,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x01,                                                 /* wTerminalType AUDIO_TERMINAL_USB_STREAMING   0x0101 */
 	0x01,
 	0x00,                                                 /* bAssocTerminal */
-	0x01,                                                 /* bNrChannels */
+	0x02,                                                 /* bNrChannels */
 	0x00,                                                 /* wChannelConfig 0x0001  mono */
 	0x00,
 	0x00,                                                 /* iChannelNames */
@@ -178,7 +178,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
 	AUDIO_STREAMING_FORMAT_TYPE,                          /* bDescriptorSubtype */
 	AUDIO_FORMAT_TYPE_I,                                  /* bFormatType */
-	0x01,                                                 /* bNrChannels */
+	0x02,                                                 /* bNrChannels */
 	0x02,                                                 /* bSubFrameSize :  2 Bytes per frame (16bits) */
 	16,                                                   /* bBitResolution (16-bits per sample) */
 	0x01,                                                 /* bSamFreqType only one frequency supported */
@@ -190,7 +190,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType */
 	COMPOSITE_AUDIO_OUT_EP,                              /* bEndpointAddress 1 out endpoint*/
 	USBD_EP_TYPE_ISOC,                                   /* bmAttributes */
-	AUDIO_PACKET_SZE(USBD_AUDIO_FREQ / 2),               /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
+	AUDIO_PACKET_SZE(USBD_AUDIO_FREQ),                   /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
 	0x01,                                                /* bInterval */
 	0x00,                                                /* bRefresh */
 	0x00,                                                /* bSynchAddress */
@@ -289,7 +289,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_CDC_MODEM_INTERFACE,                       /* bFirstInterface */
 	0x02,                                                /* bInterfaceCount */
 	0x02,                                                /* bFunctionClass */
-	0x02,                                                /* bFunctionSubClass */
+	0x00,                                                /* bFunctionSubClass */
 	0x00,                                                /* bFunctionProtocol */
 	0x00,                                                /* iFunction */
 
@@ -301,7 +301,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x01,                                                /* bNumEndpoints: One endpoints used */
 	0x02,                                                /* bInterfaceClass: Communication Interface Class */
 	0x02,                                                /* bInterfaceSubClass: Abstract Control Model */
-	0x00,                                                /* bInterfaceProtocol */
+	0x01,                                                /* bInterfaceProtocol */
 	0x00,                                                /* iInterface: */
 
 	/*Header Functional Descriptor*/

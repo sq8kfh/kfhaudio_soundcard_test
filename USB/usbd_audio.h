@@ -46,9 +46,6 @@ extern "C" {
 #define USBD_AUDIO_FREQ                               48000U
 #endif /* USBD_AUDIO_FREQ */
 
-#ifndef USBD_MAX_NUM_INTERFACES
-#define USBD_MAX_NUM_INTERFACES                       1U
-#endif /* USBD_AUDIO_FREQ */
 
 #ifndef AUDIO_HS_BINTERVAL
 #define AUDIO_HS_BINTERVAL                            0x01U
@@ -192,11 +189,6 @@ extern USBD_ClassTypeDef USBD_AUDIO;
   * @}
   */
 
-/** @defgroup USB_CORE_Exported_Functions
-  * @{
-  */
-uint8_t USBD_AUDIO_RegisterInterface(USBD_HandleTypeDef *pdev,
-                                     USBD_AUDIO_ItfTypeDef *fops);
 
 void USBD_AUDIO_Sync(USBD_HandleTypeDef *pdev, AUDIO_OffsetTypeDef offset);
 /**

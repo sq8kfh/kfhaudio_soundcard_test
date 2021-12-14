@@ -19,12 +19,12 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
 
-#define USBD_MAX_NUM_INTERFACES        1U
+//#define USBD_MAX_NUM_INTERFACES        1U
 #define USBD_MAX_NUM_CONFIGURATION     1U
 #define USBD_MAX_STR_DESC_SIZ          512U
-#define USBD_DEBUG_LEVEL               4U
+#define USBD_DEBUG_LEVEL               3U
 #define USBD_LPM_ENABLED               0U
-#define USBD_SELF_POWERED              1U
+#define USBD_SELF_POWERED              0U
 
 #define USBD_VID                       1155
 #define USBD_LANGID_STRING             1033
@@ -81,7 +81,7 @@
 
 #if (USBD_DEBUG_LEVEL > 0)
 #define USBD_UsrLog(...)    printf(__VA_ARGS__);\
-                            printf("\n");
+                            printf("\r\n");
 #else
 #define USBD_UsrLog(...)
 #endif
@@ -90,7 +90,7 @@
 
 #define USBD_ErrLog(...)    printf("ERROR: ") ;\
                             printf(__VA_ARGS__);\
-                            printf("\n");
+                            printf("\r\n");
 #else
 #define USBD_ErrLog(...)
 #endif
@@ -98,11 +98,18 @@
 #if (USBD_DEBUG_LEVEL > 2)
 #define USBD_DbgLog(...)    printf("DEBUG : ") ;\
                             printf(__VA_ARGS__);\
-                            printf("\n");
+                            printf("\r\n");
 #else
 #define USBD_DbgLog(...)
 #endif
 
+#if (USBD_DEBUG_LEVEL > 3)
+#define USBD_Dbg2Log(...)    printf("DEBUG : ") ;\
+                            printf(__VA_ARGS__);\
+                            printf("\r\n");
+#else
+#define USBD_Dbg2Log(...)
+#endif
 
 void *USBD_static_malloc(uint32_t size) __attribute__((deprecated));
 void USBD_static_free(void *p) __attribute__((deprecated));

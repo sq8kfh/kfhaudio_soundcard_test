@@ -190,7 +190,7 @@ static int8_t AUDIO_AudioCmd_FS(uint8_t* pbuf, uint32_t size, uint8_t cmd)
   switch(cmd)
   {
     case AUDIO_CMD_START:
-    	//HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)pbuf, size);
+    	HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)pbuf, size);
     break;
 
     case AUDIO_CMD_PLAY:

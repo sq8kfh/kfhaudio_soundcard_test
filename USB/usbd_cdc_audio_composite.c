@@ -280,9 +280,9 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 						if (req->wIndex == COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE) { //check if audio interface
 					    	USBD_CtlSendData(pdev, (uint8_t *)(void *)&haudio->alt_setting, 1U);
 						}
-						else if (req->wIndex == COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE) { //check if audio interface
+						/*else if (req->wIndex == COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE) { //check if audio interface
 							USBD_CtlSendData(pdev, (uint8_t *)(void *)&haudio->alt_input_setting, 1U);
-						}
+						}*/
 						else { // CDC
 							uint8_t ifalt = 0U;
 							USBD_CtlSendData(pdev, &ifalt, 1U);
@@ -305,16 +305,16 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 								ret = USBD_FAIL;
 							}
 						}
-						else if (req->wIndex == COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE) { //check if audio interface
+						/*else if (req->wIndex == COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE) { //check if audio interface
 							if ((uint8_t)(req->wValue) <= USBD_MAX_NUM_INTERFACES) {
 								haudio->alt_input_setting = (uint8_t)(req->wValue);
 							}
 							else {
-								/* Call the error management function (command will be nacked */
+								//Call the error management function (command will be nacked
 								USBD_CtlError(pdev, req);
 								ret = USBD_FAIL;
 							}
-						}
+						}*/
 					}
 					else {
 						USBD_CtlError(pdev, req);
@@ -370,14 +370,14 @@ static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_
 
 
 static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum) {
-	USBD_DbgLog("USBD_Composite_DataOut epnum: %u", epnum);
+	USBD_Dbg2Log("USBD_Composite_DataOut epnum: %u", epnum);
 	if (epnum == COMPOSITE_CDC_OUT_EP || epnum == COMPOSITE_CDC_IN_EP || epnum == COMPOSITE_CDC_CMD_EP) { //CDC
 		USBD_CDC_HandleTypeDef *hcdc = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc;
 
 		/* Get the received data length */
 		hcdc->RxLength = USBD_LL_GetRxDataSize(pdev, epnum);
 
-		USBD_DbgLog("USBD_Composite_DataOut - CDC RxLength: %u", hcdc->RxLength);
+		USBD_DbgLog("USBD_Composite_DataOut - CDC RxLength: %lu", hcdc->RxLength);
 
 		/* USB data will be immediately processed, this allow next USB traffic being
 		NAKed till the end of the application Xfer */
@@ -489,7 +489,7 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_Audio_Composite_DeviceQualifierDesc[USB_LE
 	0x02,                       /* bDeviceSubClass */
 	0x01,                       /* bDeviceProtocol */
 	0x40,                       /* bMaxPacketSize0 */
-	0x00,                       /* bNumConfigurations */
+	0x01,                       /* bNumConfigurations */
 	0x00,
 };
 
