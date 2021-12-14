@@ -39,7 +39,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_AUDIO_INTERFACE_ASSOCIATION_DESC_SIZE,      /* bLength */
 	USB_DESC_TYPE_INTERFACE_ASSOCIATION,                  /* bDescriptorType */
 	COMPOSITE_AUDIO_CONTROL_INTERFACE,                    /* bFirstInterface */
-	0x03,                                                 /* bInterfaceCount */
+	0x02,                                                 /* bInterfaceCount */
 	USB_DEVICE_CLASS_AUDIO,                               /* bFunctionClass */
 	0x00,                                                 /* bFunctionSubClass */
 	0x00,                                                 /* bFunctionProtocol */
@@ -66,9 +66,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x01,
 	LOBYTE(COMPOSITE_AUDIOCONTROL_INTERFACE_TOTAL_SIZE),  /* wTotalLength */
 	HIBYTE(COMPOSITE_AUDIOCONTROL_INTERFACE_TOTAL_SIZE),
-	0x02,                                                 /* bInCollection */
+	0x01,                                                 /* bInCollection */
 	COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE,              /* baInterfaceNr */
-	COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE,
 	/* 09 byte*/
 
 	/* USB Speaker Input Terminal Descriptor */
@@ -97,7 +96,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0,                                                    /* bmaControls(1) */
 	0x00,                                                 /* iTerminal */
 	/* 09 byte*/
-#if 0
+
 	/*USB Speaker Output Terminal Descriptor */
 	COMPOSITE_AUDIOCONTROL_SPK_OUTPUT_TERMINAL_DESC_SIZE, /* bLength */
 	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
@@ -109,7 +108,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_AUDIOCONTROL_FEATURE_UNIT_ID,               /* bSourceID */
 	0x00,                                                 /* iTerminal */
 	/* 09 byte*/
-
+#if 0
 	/*USB Microphone Input Terminal Descriptor */
 	COMPOSITE_AUDIOCONTROL_MIC_INPUT_TERMINAL_DESC_SIZE,  /* bLength */
 	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
@@ -124,7 +123,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x00,                                                 /* iChannelNames */
 	0x00,                                                 /* iTerminal */
 	/* 12 byte*/
-#endif
+
 	/* USB Microphone Output Terminal Descriptor */
 	COMPOSITE_AUDIOCONTROL_USB_OUTPUT_TERMINAL_DESC_SIZE, /* bLength */
 	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
@@ -136,7 +135,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_AUDIOCONTROL_MIN_INPUT_TERMINAL_ID,         /* bSourceID */
 	0x00,                                                 /* iTerminal */
 	/* 9 byte*/
-
+#endif
 	/* USB Speaker Standard AS Interface Descriptor - Audio Streaming Zero Bandwith */
 	/* Interface 1, Alternate Setting 0                                             */
 	COMPOSITE_AUDIO_STREAM_OUT_INTERFACE_ALT1_DESC_SIZE,  /* bLength */
@@ -287,7 +286,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_CDC_MODEM_INTERFACE,                       /* bFirstInterface */
 	0x02,                                                /* bInterfaceCount */
 	0x02,                                                /* bFunctionClass */
-	0x02,                                                /* bFunctionSubClass */
+	0x00,                                                /* bFunctionSubClass */
 	0x00,                                                /* bFunctionProtocol */
 	0x00,                                                /* iFunction */
 
@@ -354,8 +353,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType: Endpoint */
 	COMPOSITE_CDC_OUT_EP,                                /* bEndpointAddress */
 	0x02,                                                /* bmAttributes: Bulk */
-	LOBYTE(CDC_DATA_HS_MAX_PACKET_SIZE),                 /* wMaxPacketSize: */
-	HIBYTE(CDC_DATA_HS_MAX_PACKET_SIZE),
+	LOBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),                 /* wMaxPacketSize: */
+	HIBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),
 	0x00,                                                /* bInterval: ignore for Bulk transfer */
 
 	/*Endpoint IN Descriptor*/
@@ -363,7 +362,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType: Endpoint */
 	COMPOSITE_CDC_IN_EP,                                 /* bEndpointAddress */
 	0x02,                                                /* bmAttributes: Bulk */
-	LOBYTE(CDC_DATA_HS_MAX_PACKET_SIZE),                 /* wMaxPacketSize: */
-	HIBYTE(CDC_DATA_HS_MAX_PACKET_SIZE),
+	LOBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),                 /* wMaxPacketSize: */
+	HIBYTE(CDC_DATA_FS_MAX_PACKET_SIZE),
 	0x00                                                 /* bInterval: ignore for Bulk transfer */
 };

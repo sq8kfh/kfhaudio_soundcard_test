@@ -66,8 +66,8 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     USBD_LL_OpenEP(pdev, COMPOSITE_AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, AUDIO_OUT_PACKET);
     pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].is_used = 1U;
 
-    USBD_LL_OpenEP(pdev, COMPOSITE_AUDIO_IN_EP, USBD_EP_TYPE_ISOC, AUDIO_OUT_PACKET);
-    pdev->ep_in[COMPOSITE_AUDIO_IN_EP & 0xFU].is_used = 1U;
+    //USBD_LL_OpenEP(pdev, COMPOSITE_AUDIO_IN_EP, USBD_EP_TYPE_ISOC, AUDIO_OUT_PACKET);
+    //pdev->ep_in[COMPOSITE_AUDIO_IN_EP & 0xFU].is_used = 1U;
 
     /* Allocate Audio structure */
     //haudio = (USBD_AUDIO_HandleTypeDef*)USBD_malloc(sizeof(USBD_AUDIO_HandleTypeDef));
@@ -321,6 +321,10 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 					    ret = USBD_FAIL;
 					}
 					break;
+
+				case USB_REQ_CLEAR_FEATURE:
+				      break;
+
 				default:
 					USBD_CtlError(pdev, req);
 			        ret = USBD_FAIL;
@@ -428,13 +432,13 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 
 
 static uint8_t USBD_CDC_Audio_Composite_IsoINIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnum) {
-	USBD_DbgLog("USBD_Composite_IsoINIncomplete epnum: %u", epnum);
+	//USBD_DbgLog("USBD_Composite_IsoINIncomplete epnum: %u", epnum);
 	return USBD_OK;
 }
 
 
 static uint8_t USBD_CDC_Audio_Composite_IsoOutIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnum) {
-	USBD_DbgLog("USBD_Composite_IsoOutIncomplete epnum: %u", epnum);
+	//USBD_DbgLog("USBD_Composite_IsoOutIncomplete epnum: %u", epnum);
 	return USBD_OK;
 }
 

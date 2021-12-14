@@ -335,7 +335,7 @@ __ALIGN_BEGIN static uint8_t USBD_AUDIO_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIE
   */
 static uint8_t USBD_AUDIO_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
-  UNUSED(cfgidx);
+	USBD_DbgLog("USBD_AUDIO_Init cfgidx: %d" ,cfgidx);
   USBD_AUDIO_HandleTypeDef *haudio;
 
   /* Allocate Audio structure */
@@ -392,7 +392,7 @@ static uint8_t USBD_AUDIO_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
   */
 static uint8_t USBD_AUDIO_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 {
-  UNUSED(cfgidx);
+	USBD_DbgLog("USBD_AUDIO_DeInit cfgidx: %d" ,cfgidx);
 
   /* Open EP OUT */
   (void)USBD_LL_CloseEP(pdev, AUDIO_OUT_EP);
@@ -420,6 +420,8 @@ static uint8_t USBD_AUDIO_DeInit(USBD_HandleTypeDef *pdev, uint8_t cfgidx)
 static uint8_t USBD_AUDIO_Setup(USBD_HandleTypeDef *pdev,
                                 USBD_SetupReqTypedef *req)
 {
+	USBD_DbgLog("USBD_AUDIO_Setup bmRequest: %u bRequest: %u wValue: %u wIndex: %u wLength: %u", req->bmRequest, req->bRequest, req->wValue, req->wIndex, req->wLength);
+
   USBD_AUDIO_HandleTypeDef *haudio;
   uint16_t len;
   uint8_t *pbuf;
@@ -695,7 +697,7 @@ static uint8_t USBD_AUDIO_IsoINIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnu
 {
   UNUSED(pdev);
   UNUSED(epnum);
-
+  //USBD_DbgLog("USBD_AUDIO_IsoINIncomplete epnum: %u", epnum);
   return (uint8_t)USBD_OK;
 }
 /**
@@ -709,7 +711,7 @@ static uint8_t USBD_AUDIO_IsoOutIncomplete(USBD_HandleTypeDef *pdev, uint8_t epn
 {
   UNUSED(pdev);
   UNUSED(epnum);
-
+  //USBD_DbgLog("USBD_AUDIO_IsoOutIncomplete epnum: %u", epnum);
   return (uint8_t)USBD_OK;
 }
 /**

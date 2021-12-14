@@ -118,12 +118,12 @@ void i2s_start(void)
 	{
 		i2s_buffer[i] = 0U;
 	}
-	HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_buffer, AUDIO_TOTAL_BUF_SIZE / 2U);
+	//HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)i2s_buffer, AUDIO_TOTAL_BUF_SIZE / 2U);
 }
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
-void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
+/*void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = (USBD_AUDIO_HandleTypeDef *)hUsbDeviceFS.pClassData;
@@ -193,7 +193,7 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 				if (haudio->rd_ptr == AUDIO_TOTAL_BUF_SIZE) haudio->rd_ptr = 0U;
 		}
 	}
-}
+}*/
 /* USER CODE END 0 */
 
 /**
