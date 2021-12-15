@@ -2,13 +2,8 @@
 #define __USB_DESCRIPTOR_H
 
 #include "usbd_conf.h"
-/*
-#include "usbd_composite.h"
-#include "usbd_desc.h"
-#include "usbd_audio.h"
-#include "usbd_cdc.h"
-#include "usbd_ctlreq.h"
-*/
+
+
 #define COMPOSITE_CONFIGURATION_DESCRIPTOR_DESC_SIZE           9U
 
 #define COMPOSITE_AUDIO_INTERFACE_ASSOCIATION_DESC_SIZE        8U
@@ -49,12 +44,14 @@
 												   + COMPOSITE_AUDIOCONTROL_FEATURE_UNIT_DESC_SIZE \
 												   + COMPOSITE_AUDIOCONTROL_SPK_OUTPUT_TERMINAL_DESC_SIZE)
 
+
 #define COMPOSITE_AUDIOCONTROL_HEADER_DESC_SHIFT    (COMPOSITE_CONFIGURATION_DESCRIPTOR_DESC_SIZE \
                                                    + COMPOSITE_AUDIO_INTERFACE_ASSOCIATION_DESC_SIZE \
                                                    + COMPOSITE_AUDIO_CONTROL_INTERFACE_DESC_SIZE)
 
+
 #define CDC_AUDIO_COMPOSITE_DESCRIPTOR_SIZE         (COMPOSITE_CONFIGURATION_DESCRIPTOR_DESC_SIZE \
-                                                   + COMPOSITE_AUDIO_INTERFACE_ASSOCIATION_DESC_SIZE \
+		                                           + COMPOSITE_AUDIO_INTERFACE_ASSOCIATION_DESC_SIZE \
                                                    + COMPOSITE_AUDIO_CONTROL_INTERFACE_DESC_SIZE \
                                                    + COMPOSITE_AUDIOCONTROL_HEADER_DESC_SIZE \
                                                    + COMPOSITE_AUDIOCONTROL_USB_INPUT_TERMINAL_DESC_SIZE \
@@ -76,7 +73,6 @@
                                                    + COMPOSITE_CDC_DATA_INTERFACE_DESC_SIZE \
                                                    + COMPOSITE_CDC_DATA_OUT_ENDPOINT_DESC_SIZE \
                                                    + COMPOSITE_CDC_DATA_IN_ENDPOINT_DESC_SIZE)
-
 
 
 #define COMPOSITE_AUDIOCONTROL_USB_INPUT_TERMINAL_ID           1U

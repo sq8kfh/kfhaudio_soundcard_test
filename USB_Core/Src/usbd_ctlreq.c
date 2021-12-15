@@ -100,6 +100,7 @@ static uint8_t USBD_GetLen(uint8_t *buf);
 USBD_StatusTypeDef USBD_StdDevReq(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req)
 {
   USBD_StatusTypeDef ret = USBD_OK;
+ USBD_DbgLog("USBD_StdDevReq bmRequest: %02x bRequest: %02x wValue: %u wIndex: %u wLength: %u", req->bmRequest, req->bRequest, req->wValue, req->wIndex, req->wLength);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK)
   {

@@ -153,6 +153,7 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
+	printf("CDC_Init_FS\r\n");
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
@@ -171,6 +172,7 @@ static int8_t CDC_DeInit_FS(void)
   /* USER CODE END 4 */
 }
 
+uint8_t tempbuf[7];
 /**
   * @brief  Manage the CDC class requests
   * @param  cmd: Command code
@@ -221,12 +223,24 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
   /*******************************************************************************/
     case CDC_SET_LINE_CODING:
-
-    break;
+      tempbuf[0]=pbuf[0];
+      tempbuf[1]=pbuf[1];
+      tempbuf[2]=pbuf[2];
+      tempbuf[3]=pbuf[3];
+      tempbuf[4]=pbuf[4];
+      tempbuf[5]=pbuf[5];
+      tempbuf[6]=pbuf[6];
+      break;
 
     case CDC_GET_LINE_CODING:
-
-    break;
+      pbuf[0]=tempbuf[0];
+      pbuf[1]=tempbuf[1];
+      pbuf[2]=tempbuf[2];
+      pbuf[3]=tempbuf[3];
+      pbuf[4]=tempbuf[4];
+      pbuf[5]=tempbuf[5];
+      pbuf[6]=tempbuf[6];
+      break;
 
     case CDC_SET_CONTROL_LINE_STATE:
     	if (length == 0) {
@@ -273,6 +287,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   CDC_Transmit_FS(Buf, *Len);

@@ -19,7 +19,7 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
 
-//#define USBD_MAX_NUM_INTERFACES        1U
+#define USBD_MAX_NUM_INTERFACES        COMPOSITE_INTERFACE_COUNT
 #define USBD_MAX_NUM_CONFIGURATION     1U
 #define USBD_MAX_STR_DESC_SIZ          512U
 #define USBD_DEBUG_LEVEL               3U
@@ -44,10 +44,10 @@
 #define COMPOSITE_EP_COUNT                            4
 
 
-#define COMPOSITE_AUDIO_CONTROL_INTERFACE             0x00
-#define COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE       0x01
-#define COMPOSITE_CDC_MODEM_INTERFACE                 0x02
-#define COMPOSITE_CDC_DATA_INTERFACE                  0x03
+#define COMPOSITE_AUDIO_CONTROL_INTERFACE             0x02
+#define COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE       0x03
+#define COMPOSITE_CDC_MODEM_INTERFACE                 0x00
+#define COMPOSITE_CDC_DATA_INTERFACE                  0x01
 
 #define COMPOSITE_INTERFACE_COUNT                     4
 

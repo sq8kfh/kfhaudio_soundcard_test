@@ -27,14 +27,13 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_INTERFACE_COUNT,                            /* bNumInterfaces */
 	0x01,                                                 /* bConfigurationValue */
 	0x00,                                                 /* iConfiguration */
-	0xC0,                                                 /* bmAttributes  BUS Powred*/
+	0x80,                                                 /* bmAttributes  BUS Powred*/
 	0x32,                                                 /* bMaxPower = 100 mA*/
 	/* 09 byte*/
 
-
 	/*
 	 * AUDIO
-	 */
+	*/
 
 	/* Interface Association */
 	COMPOSITE_AUDIO_INTERFACE_ASSOCIATION_DESC_SIZE,      /* bLength */
@@ -277,8 +276,6 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	/* 07 byte*/
 #endif
 
-
-
 	/*
 	 * CDC
 	 */
@@ -289,7 +286,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_CDC_MODEM_INTERFACE,                       /* bFirstInterface */
 	0x02,                                                /* bInterfaceCount */
 	0x02,                                                /* bFunctionClass */
-	0x00,                                                /* bFunctionSubClass */
+	0x02,                                                /* bFunctionSubClass */
 	0x00,                                                /* bFunctionProtocol */
 	0x00,                                                /* iFunction */
 
@@ -301,7 +298,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x01,                                                /* bNumEndpoints: One endpoints used */
 	0x02,                                                /* bInterfaceClass: Communication Interface Class */
 	0x02,                                                /* bInterfaceSubClass: Abstract Control Model */
-	0x01,                                                /* bInterfaceProtocol */
+	0x00,                                                /* bInterfaceProtocol */
 	0x00,                                                /* iInterface: */
 
 	/*Header Functional Descriptor*/

@@ -91,7 +91,6 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     USBD_LL_PrepareReceive(pdev, COMPOSITE_AUDIO_OUT_EP, haudio->buffer, AUDIO_OUT_PACKET);
 
 // CDC
-    pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = CDC_FS_BINTERVAL;
 
     /* Open EP IN */
     USBD_LL_OpenEP(pdev, COMPOSITE_CDC_IN_EP, USBD_EP_TYPE_BULK, CDC_DATA_FS_IN_PACKET_SIZE);
@@ -104,9 +103,17 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     /* Open EP OUT - CMD */
     USBD_LL_OpenEP(pdev, COMPOSITE_CDC_CMD_EP, USBD_EP_TYPE_INTR, CDC_CMD_PACKET_SIZE);
     pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].is_used = 1U;
+    pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = CDC_FS_BINTERVAL;
 
     //hcdc = (USBD_CDC_HandleTypeDef*)USBD_malloc(sizeof(USBD_CDC_HandleTypeDef));
     hcdc = &hcomposite.hcdc;
+
+    hcdc->CmdLength = 0;
+    hcdc->CmdOpCode = 0;
+    hcdc->RxBuffer = NULL;
+    hcdc->RxLength = 0;
+    hcdc->TxBuffer = NULL;
+    hcdc->TxLength = 0;
 
     /* Init  physical Interface components */
     ((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_cdc->Init();
@@ -116,7 +123,7 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     hcdc->RxState = 0U;
 
     /* Prepare CDC Out endpoint to receive next packet */
-    USBD_LL_PrepareReceive(pdev, COMPOSITE_CDC_OUT_EP, hcdc->RxBuffer, CDC_DATA_HS_OUT_PACKET_SIZE);
+    USBD_LL_PrepareReceive(pdev, COMPOSITE_CDC_OUT_EP, hcdc->RxBuffer, CDC_DATA_FS_OUT_PACKET_SIZE);
 
 	return USBD_OK;
 }
@@ -230,7 +237,8 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 		    	                                                            (uint8_t *)(void *)hcdc->data,
 		    	                                                            req->wLength);
 
-		    		        USBD_CtlSendData(pdev, (uint8_t *)(void *)hcdc->data, req->wLength);
+		    		    	uint16_t len = MIN(CDC_REQ_MAX_DATA_SIZE, req->wLength);
+		    		    	(void)USBD_CtlSendData(pdev, (uint8_t *)hcdc->data, len);
 		    		    }
 		    			else {
 		    				hcdc->CmdOpCode = req->bRequest;
@@ -251,7 +259,7 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 
 			    case AUDIO_REQ_SET_CUR:
 			    	USBD_DbgLog("USBD_Composite_Setup - Audio");
-			       	AUDIO_REQ_SetCurrent(pdev, req);
+			      	AUDIO_REQ_SetCurrent(pdev, req);
 			       	break;
 
 			    default:
@@ -327,10 +335,6 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 					    ret = USBD_FAIL;
 					}
 					break;
-
-				case USB_REQ_CLEAR_FEATURE:
-				      break;
-
 				default:
 					USBD_CtlError(pdev, req);
 			        ret = USBD_FAIL;
@@ -383,7 +387,7 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 		/* Get the received data length */
 		hcdc->RxLength = USBD_LL_GetRxDataSize(pdev, epnum);
 
-		USBD_DbgLog("USBD_Composite_DataOut - CDC RxLength: %lu", hcdc->RxLength);
+		USBD_DbgLog("USBD_Composite_DataOut - CDC: epnum: %u RxLength: %lu", epnum, hcdc->RxLength);
 
 		/* USB data will be immediately processed, this allow next USB traffic being
 		NAKed till the end of the application Xfer */
@@ -460,13 +464,13 @@ static uint8_t USBD_CDC_Audio_Composite_IsoOutIncomplete(USBD_HandleTypeDef *pde
 
 
 static uint8_t USBD_CDC_Audio_Composite_EP0_TxSent(USBD_HandleTypeDef *pdev) {
-	USBD_DbgLog("USBD_Composite_EP0_TxSent");
+	USBD_Dbg2Log("USBD_Composite_EP0_TxSent");
 	return USBD_OK;
 }
 
 
 static uint8_t USBD_CDC_Audio_Composite_EP0_RxReady (USBD_HandleTypeDef *pdev) {
-	USBD_DbgLog("USBD_Composite_EP0_RxReady");
+	USBD_Dbg2Log("USBD_Composite_EP0_RxReady");
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 	USBD_CDC_HandleTypeDef   *hcdc = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc;
 
@@ -501,9 +505,9 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_Audio_Composite_DeviceQualifierDesc[USB_LE
 	USB_DESC_TYPE_DEVICE_QUALIFIER,
 	0x00,                       /* bcdUSB */
 	0x02,
-	0xEF,                       /* bDeviceClass */
-	0x02,                       /* bDeviceSubClass */
-	0x01,                       /* bDeviceProtocol */
+	0x00,                       /* bDeviceClass */
+	0x00,                       /* bDeviceSubClass */
+	0x00,                       /* bDeviceProtocol */
 	0x40,                       /* bMaxPacketSize0 */
 	0x01,                       /* bNumConfigurations */
 	0x00,
