@@ -146,7 +146,7 @@ typedef struct
 {
   uint32_t alt_setting;
   uint32_t alt_input_setting;
-  uint8_t buffer[AUDIO_TOTAL_BUF_SIZE];
+  uint8_t buffer[AUDIO_TOTAL_BUF_SIZE + AUDIO_OUT_PACKET];
   AUDIO_OffsetTypeDef offset;
   uint8_t rd_enable;
   uint16_t rd_ptr;

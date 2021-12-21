@@ -24,6 +24,7 @@
 #include <math.h>
 #include "usb_device.h"
 #include "usbd_audio.h"
+#include "usbd_cdc_audio_composite.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -122,17 +123,20 @@ void i2s_start(void)
 }
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
+extern volatile uint32_t irq_count;
+extern volatile uint32_t feedback_data __attribute__ ((aligned(4)));
 
-/*void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
+void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	USBD_AUDIO_HandleTypeDef *haudio;
-	haudio = (USBD_AUDIO_HandleTypeDef *)hUsbDeviceFS.pClassData;
+	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceFS.pClassData)->haudio;
 	if (haudio) {
-		uint16_t diff = haudio->rd_ptr > haudio->wr_ptr ? AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + haudio->wr_ptr : haudio->wr_ptr - haudio->rd_ptr;
-		uint16_t sync_diff = diff < (AUDIO_TOTAL_BUF_SIZE / 2U) ? (AUDIO_TOTAL_BUF_SIZE / 2U) - diff : 0;
-		printf("H %u %u %u %u\r\n", haudio->rd_ptr, haudio->wr_ptr, diff, sync_diff);
+		//uint16_t diff = haudio->rd_ptr > haudio->wr_ptr ? AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + haudio->wr_ptr : haudio->wr_ptr - haudio->rd_ptr;
+		//uint16_t sync_diff = diff < (AUDIO_TOTAL_BUF_SIZE / 2U) ? (AUDIO_TOTAL_BUF_SIZE / 2U) - diff : 0;
+	    uint16_t  dma = __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
+		printf("H %u %lu\r\n", dma, feedback_data);
 
-		uint16_t space = 0;
+		/*uint16_t space = 0;
 		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
 		uint16_t space_conuter = 0;
 
@@ -155,20 +159,21 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 				space_conuter--;
 			}
 			if (haudio->rd_ptr == AUDIO_TOTAL_BUF_SIZE) haudio->rd_ptr = 0U;
-		}
+		}*/
 	}
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	USBD_AUDIO_HandleTypeDef *haudio;
-	haudio = (USBD_AUDIO_HandleTypeDef *)hUsbDeviceFS.pClassData;
+	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceFS.pClassData)->haudio;
 	if (haudio) {
-		uint16_t diff = haudio->rd_ptr > haudio->wr_ptr ? AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + haudio->wr_ptr : haudio->wr_ptr - haudio->rd_ptr;
-		uint16_t sync_diff = diff < (AUDIO_TOTAL_BUF_SIZE / 2U) ? (AUDIO_TOTAL_BUF_SIZE / 2U) - diff : 0;
-		printf("F %u %u %u %u\r\n", haudio->rd_ptr, haudio->wr_ptr, diff, sync_diff);
-
-		uint16_t space = 0;
+		//uint16_t diff = haudio->rd_ptr > haudio->wr_ptr ? AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + haudio->wr_ptr : haudio->wr_ptr - haudio->rd_ptr;
+		//uint16_t sync_diff = diff < (AUDIO_TOTAL_BUF_SIZE / 2U) ? (AUDIO_TOTAL_BUF_SIZE / 2U) - diff : 0;
+		uint16_t  dma = __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
+		//printf("F %u %u %u %lx\r\n", AUDIO_TOTAL_BUF_SIZE, haudio->wr_ptr, dma, feedback_data);
+		printf("F %u %lu\r\n", dma, feedback_data);
+		/*uint16_t space = 0;
 		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
 		uint16_t space_conuter = 0;
 
@@ -191,9 +196,10 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 					space_conuter--;
 				}
 				if (haudio->rd_ptr == AUDIO_TOTAL_BUF_SIZE) haudio->rd_ptr = 0U;
-		}
+		}*/
 	}
-}*/
+}
+void sent_feedback(void);
 /* USER CODE END 0 */
 
 /**
@@ -228,7 +234,6 @@ int main(void)
   MX_I2S3_Init();
   MX_I2C1_Init();
   MX_USART2_UART_Init();
-  //MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
   printf("Starting usb...\r\n");
   MX_USB_DEVICE_Init();
@@ -414,7 +419,7 @@ static void MX_USB_OTG_FS_PCD_Init(void)
   hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
   hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
   hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
+  hpcd_USB_OTG_FS.Init.Sof_enable = ENABLE;
   hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
   hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
   hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
@@ -462,10 +467,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, LED_ORANGE_Pin|LED_GREEN_Pin|AUDIO_RST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, LED_GREEN_Pin|LED_ORANGE_Pin|AUDIO_RST_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : LED_ORANGE_Pin LED_GREEN_Pin AUDIO_RST_Pin */
-  GPIO_InitStruct.Pin = LED_ORANGE_Pin|LED_GREEN_Pin|AUDIO_RST_Pin;
+  /*Configure GPIO pins : LED_GREEN_Pin LED_ORANGE_Pin AUDIO_RST_Pin */
+  GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_ORANGE_Pin|AUDIO_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

@@ -19,41 +19,52 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
 
-#define USBD_MAX_NUM_INTERFACES        COMPOSITE_INTERFACE_COUNT
-#define USBD_MAX_NUM_CONFIGURATION     1U
-#define USBD_MAX_STR_DESC_SIZ          512U
-#define USBD_DEBUG_LEVEL               3U
-#define USBD_LPM_ENABLED               0U
-#define USBD_SELF_POWERED              0U
+#define USBD_MAX_NUM_INTERFACES                       COMPOSITE_INTERFACE_COUNT
+#define USBD_MAX_NUM_CONFIGURATION                    1U
+#define USBD_MAX_STR_DESC_SIZ                         512U
+#define USBD_DEBUG_LEVEL                              3U
+#define USBD_LPM_ENABLED                              0U
+#define USBD_SELF_POWERED                             0U
 
-#define USBD_VID                       1155
-#define USBD_LANGID_STRING             1033
-#define USBD_MANUFACTURER_STRING       "SQ8KFH"
-#define USBD_PID_FS                    22336
-#define USBD_PRODUCT_STRING_FS         "KFH Audio"
-#define USBD_CONFIGURATION_STRING_FS   "AUDIO Config"
-#define USBD_INTERFACE_STRING_FS       "AUDIO Interface"
+#define USBD_VID                                      1155
+#define USBD_LANGID_STRING                            1033
+#define USBD_MANUFACTURER_STRING                      "SQ8KFH"
+#define USBD_PID_FS                                   22336
+#define USBD_PRODUCT_STRING_FS                        "KFH Audio"
+#define USBD_CONFIGURATION_STRING_FS                  "AUDIO Config"
+#define USBD_INTERFACE_STRING_FS                      "AUDIO Interface"
 
-#define USB_SIZ_BOS_DESC               0x0C
+#define USB_SIZ_BOS_DESC                              0x0C
 
 
-#define COMPOSITE_AUDIO_OUT_EP                        0x01U
+#define COMPOSITE_AUDIO_OUT_EP                        0x01U  /* EP1 for data OUT */
+#define COMPOSITE_AUDIO_OUT_SYNCH_EP                  0x81U  /* EP1 for data IN */
+#define COMPOSITE_AUDIO_IN_EP                         0x83U  /* EP2 for data IN */
 #define COMPOSITE_CDC_OUT_EP                          0x02U  /* EP2 for data OUT */
 #define COMPOSITE_CDC_IN_EP                           0x82U  /* EP2 for data IN */
 #define COMPOSITE_CDC_CMD_EP                          0x83U  /* EP3 for CDC commands */
-#define COMPOSITE_EP_COUNT                            4
 
+//#define COMPOSITE_EP_COUNT                            6
 
-#define COMPOSITE_AUDIO_CONTROL_INTERFACE             0x02
-#define COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE       0x03
-#define COMPOSITE_CDC_MODEM_INTERFACE                 0x00
-#define COMPOSITE_CDC_DATA_INTERFACE                  0x01
+#ifdef USB_AUDIO_MIC_ON
+#define COMPOSITE_AUDIO_CONTROL_INTERFACE             0x00
+#define COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE       0x01
+#define COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE        0x02
+#define COMPOSITE_CDC_MODEM_INTERFACE                 0x03
+#define COMPOSITE_CDC_DATA_INTERFACE                  0x04
 
-#define COMPOSITE_INTERFACE_COUNT                     4
+#define COMPOSITE_INTERFACE_COUNT                     5U
+#else
+#define COMPOSITE_AUDIO_CONTROL_INTERFACE             0x00
+#define COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE       0x01
+#define COMPOSITE_CDC_MODEM_INTERFACE                 0x02
+#define COMPOSITE_CDC_DATA_INTERFACE                  0x03
 
+#define COMPOSITE_INTERFACE_COUNT                     4U
+#endif
 
-#define USBD_AUDIO_FREQ                48000U
-
+#define USBD_AUDIO_FREQ                               48000U
+#define USBD_AUDIO_FEEDBACK_SOF_RATE                  3U
 
 
 

@@ -129,7 +129,7 @@ uint8_t USBD_CDC_TransmitPacket(USBD_HandleTypeDef *pdev)
 
     /* Update the packet total length */
     pdev->ep_in[COMPOSITE_CDC_IN_EP & 0xFU].total_length = hcdc->TxLength;
-
+    printf("trx %c %lu\r\n",hcdc->TxBuffer[0], hcdc->TxLength);
     /* Transmit next packet */
     (void)USBD_LL_Transmit(pdev, COMPOSITE_CDC_IN_EP, hcdc->TxBuffer, hcdc->TxLength);
 

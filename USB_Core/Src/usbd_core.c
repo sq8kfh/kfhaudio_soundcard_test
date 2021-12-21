@@ -295,6 +295,9 @@ USBD_StatusTypeDef USBD_LL_SetupStage(USBD_HandleTypeDef *pdev, uint8_t *psetup)
 
   pdev->ep0_data_len = pdev->request.wLength;
 
+  USBD_DbgLog("USBD_LL_SetupStage bmRequest: 0x%02x bRequest: 0x%02x wValue: %u wIndex: %u wLength: %u", pdev->request.bmRequest, pdev->request.bRequest, pdev->request.wValue, pdev->request.wIndex, pdev->request.wLength);
+
+
   switch (pdev->request.bmRequest & 0x1FU)
   {
     case USB_REQ_RECIPIENT_DEVICE:
