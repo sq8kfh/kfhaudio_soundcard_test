@@ -171,6 +171,8 @@ static int8_t AUDIO_DeInit_FS(uint32_t options)
   /* USER CODE BEGIN 1 */
 	printf("AUDIO_DeInit_FS\r\n");
   UNUSED(options);
+  extern I2S_HandleTypeDef hi2s3;
+  HAL_I2S_DMAStop(&hi2s3);
   return (USBD_OK);
   /* USER CODE END 1 */
 }

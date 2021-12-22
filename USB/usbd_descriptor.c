@@ -220,7 +220,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType */
 	COMPOSITE_AUDIO_OUT_SYNCH_EP,                        /* bEndpointAddress 1 out endpoint*/
 	USBD_EP_TYPE_ISOC,                                   /* bmAttributes */
-	0x04,                                                /* wMaxPacketSize ? */
+	0x03,                                                /* wMaxPacketSize ? */
 	0x00,
 	0x01,                                                /* bInterval */
 	USBD_AUDIO_FEEDBACK_SOF_RATE,                        /* bRefresh */

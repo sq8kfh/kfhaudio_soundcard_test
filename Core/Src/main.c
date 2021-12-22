@@ -125,16 +125,20 @@ void i2s_start(void)
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern volatile uint32_t irq_count;
 extern volatile uint32_t feedback_data __attribute__ ((aligned(4)));
+extern volatile uint32_t tx_flag;
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceFS.pClassData)->haudio;
 	if (haudio) {
-		//uint16_t diff = haudio->rd_ptr > haudio->wr_ptr ? AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + haudio->wr_ptr : haudio->wr_ptr - haudio->rd_ptr;
-		//uint16_t sync_diff = diff < (AUDIO_TOTAL_BUF_SIZE / 2U) ? (AUDIO_TOTAL_BUF_SIZE / 2U) - diff : 0;
-	    uint16_t  dma = __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
-		printf("H %u %lu\r\n", dma, feedback_data);
+		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
+				dma <<= 1;
+				uint16_t usb = haudio->wr_ptr;
+				uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
+
+				//printf("F %u %u %u %lx\r\n", AUDIO_TOTAL_BUF_SIZE, haudio->wr_ptr, dma, feedback_data);
+				printf("H %u %u %u 0x%lx %u\r\n", tx_flag, dma, usb, feedback_data, sync_diff);
 
 		/*uint16_t space = 0;
 		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
@@ -170,9 +174,13 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 	if (haudio) {
 		//uint16_t diff = haudio->rd_ptr > haudio->wr_ptr ? AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + haudio->wr_ptr : haudio->wr_ptr - haudio->rd_ptr;
 		//uint16_t sync_diff = diff < (AUDIO_TOTAL_BUF_SIZE / 2U) ? (AUDIO_TOTAL_BUF_SIZE / 2U) - diff : 0;
-		uint16_t  dma = __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
+		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
+		dma <<= 1;
+		uint16_t usb = haudio->wr_ptr;
+		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
+
 		//printf("F %u %u %u %lx\r\n", AUDIO_TOTAL_BUF_SIZE, haudio->wr_ptr, dma, feedback_data);
-		printf("F %u %lu\r\n", dma, feedback_data);
+		printf("F %u %u %u 0x%lx %u\r\n", tx_flag, dma, usb, feedback_data, sync_diff);
 		/*uint16_t space = 0;
 		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
 		uint16_t space_conuter = 0;
