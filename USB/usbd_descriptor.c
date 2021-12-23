@@ -5,8 +5,8 @@
 
 
 #define AUDIO_SAMPLE_FREQ(frq)         (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
-#define AUDIO_PACKET_SZE(frq)          (uint8_t)(((frq * 2U * 2U)/1000U) & 0xFFU), \
-                                       (uint8_t)((((frq * 2U * 2U)/1000U) >> 8) & 0xFFU)
+#define AUDIO_PACKET_SZE(frq)          (uint8_t)(((frq /1000U + 1) * 2U * 2U) & 0xFFU), \
+                                       (uint8_t)((((frq /1000U + 1) * 2U * 2U) >> 8) & 0xFFU)
 
 #define  USB_DESC_TYPE_DEVICE                           0x01U
 #define  USB_DESC_TYPE_CONFIGURATION                    0x02U
