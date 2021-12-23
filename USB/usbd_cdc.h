@@ -1,46 +1,8 @@
-/**
-  ******************************************************************************
-  * @file    usbd_cdc.h
-  * @author  MCD Application Team
-  * @brief   header file for the usbd_cdc.c file.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2015 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                      www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
-
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __USB_CDC_H
 #define __USB_CDC_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Includes ------------------------------------------------------------------*/
 #include  "usbd_ioreq.h"
 
-/** @addtogroup STM32_USB_DEVICE_LIBRARY
-  * @{
-  */
-
-/** @defgroup usbd_cdc
-  * @brief This file is the Header file for usbd_cdc.c
-  * @{
-  */
-
-
-/** @defgroup usbd_cdc_Exported_Defines
-  * @{
-  */
 
 #ifndef CDC_HS_BINTERVAL
 #define CDC_HS_BINTERVAL                            0x10U
@@ -76,18 +38,7 @@ extern "C" {
 #define CDC_SET_CONTROL_LINE_STATE                  0x22U
 #define CDC_SEND_BREAK                              0x23U
 
-/**
-  * @}
-  */
 
-
-/** @defgroup USBD_CORE_Exported_TypesDefinitions
-  * @{
-  */
-
-/**
-  * @}
-  */
 typedef struct
 {
   uint32_t bitrate;
@@ -95,15 +46,6 @@ typedef struct
   uint8_t  paritytype;
   uint8_t  datatype;
 } USBD_CDC_LineCodingTypeDef;
-
-typedef struct _USBD_CDC_Itf
-{
-  int8_t (* Init)(void);
-  int8_t (* DeInit)(void);
-  int8_t (* Control)(uint8_t cmd, uint8_t *pbuf, uint16_t length);
-  int8_t (* Receive)(uint8_t *Buf, uint32_t *Len);
-  int8_t (* TransmitCplt)(uint8_t *Buf, uint32_t *Len, uint8_t epnum);
-} USBD_CDC_ItfTypeDef;
 
 
 typedef struct
@@ -122,47 +64,10 @@ typedef struct
 
 
 
-/** @defgroup USBD_CORE_Exported_Macros
-  * @{
-  */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBD_CORE_Exported_Variables
-  * @{
-  */
-
-extern USBD_ClassTypeDef USBD_CDC;
-#define USBD_CDC_CLASS &USBD_CDC
-/**
-  * @}
-  */
-
-
-
-uint8_t USBD_CDC_SetTxBuffer(USBD_HandleTypeDef *pdev, uint8_t *pbuff,
-                             uint32_t length);
-
+uint8_t USBD_CDC_SetTxBuffer(USBD_HandleTypeDef *pdev, uint8_t *pbuff, uint32_t length);
 uint8_t USBD_CDC_SetRxBuffer(USBD_HandleTypeDef *pdev, uint8_t *pbuff);
 uint8_t USBD_CDC_ReceivePacket(USBD_HandleTypeDef *pdev);
 uint8_t USBD_CDC_TransmitPacket(USBD_HandleTypeDef *pdev);
-/**
-  * @}
-  */
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* __USB_CDC_H */
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

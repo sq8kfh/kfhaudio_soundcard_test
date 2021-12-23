@@ -3,6 +3,8 @@
 #include "usbd_descriptor.h"
 #include "usbd_desc.h"
 #include "usbd_ctlreq.h"
+#include "usbd_audio_if.h"
+#include "usbd_cdc_if.h"
 #include "stm32f4xx_hal_dma.h"
 #include "stm32f4xx_hal_i2s.h"
 
@@ -46,28 +48,14 @@ USBD_ClassTypeDef USBD_Composite = {
 };
 
  USBD_Composite_HandleTypeDef hcomposite;
- USBD_Composite_ItfTypeDef fops_composite;
 
-
- extern I2S_HandleTypeDef hi2s3;
-
-
- extern USBD_HandleTypeDef hUsbDeviceFS;
-
-
- uint8_t USBD_CDC_Audio_Composite_RegisterInterface(USBD_HandleTypeDef *pdev, USBD_CDC_ItfTypeDef *fops_cdc, USBD_AUDIO_ItfTypeDef *fops_audio) {
-	fops_composite.fops_cdc = fops_cdc;
-	fops_composite.fops_audio = fops_audio;
-
-	pdev->pUserData = &fops_composite;
-	return USBD_OK;
-}
 
 static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
 	USBD_DbgLog("USBD_Composite_Init cfgidx: %d" ,cfgidx);
 	USBD_AUDIO_HandleTypeDef *haudio;
 	USBD_CDC_HandleTypeDef   *hcdc;
 
+	pdev->pUserData = NULL;
 	pdev->pClassData = &hcomposite;
 
 // AUDIO
@@ -89,7 +77,6 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
 #endif
 
     /* Allocate Audio structure */
-    //haudio = (USBD_AUDIO_HandleTypeDef*)USBD_malloc(sizeof(USBD_AUDIO_HandleTypeDef));
     haudio = &hcomposite.haudio;
 
     haudio->alt_output_setting = 0U;
@@ -100,15 +87,13 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     haudio->synch_feedback_tx_flag = 1;
 
     /* Initialize the Audio output Hardware layer */
-    if (((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->Init(USBD_AUDIO_FREQ, AUDIO_DEFAULT_VOLUME, 0U) != 0) {
+    if (AUDIO_Init_FS(USBD_AUDIO_FREQ, AUDIO_DEFAULT_VOLUME, 0U) != 0) {
       	return USBD_FAIL;
     }
 
     /* Prepare Out endpoint to receive 1st packet */
     USBD_LL_PrepareReceive(pdev, COMPOSITE_AUDIO_OUT_EP, haudio->buffer, AUDIO_OUT_MAX_PACKET);
 
-    //extern I2S_HandleTypeDef hi2s3;
-    //HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)&haudio->buffer[0], AUDIO_TOTAL_BUF_SIZE / 2U);
 
 // CDC
 
@@ -125,7 +110,6 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].is_used = 1U;
     pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = CDC_FS_BINTERVAL;
 
-    //hcdc = (USBD_CDC_HandleTypeDef*)USBD_malloc(sizeof(USBD_CDC_HandleTypeDef));
     hcdc = &hcomposite.hcdc;
 
     hcdc->CmdLength = 0;
@@ -136,7 +120,7 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     hcdc->TxLength = 0;
 
     /* Init  physical Interface components */
-    ((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_cdc->Init();
+    CDC_Init_FS();
 
     /* Init Xfer states */
     hcdc->TxState = 0U;
@@ -166,10 +150,7 @@ static uint8_t  USBD_CDC_Audio_Composite_DeInit (USBD_HandleTypeDef *pdev, uint8
 
 	/* DeInit  physical Interface components */
 	if (pdev->pClassData != NULL) {
-		((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_cdc->DeInit();
-
-	    //USBD_free(((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc);
-	    //((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc = NULL;
+		CDC_DeInit_FS();
 	}
 
 //AUDIO
@@ -186,7 +167,7 @@ static uint8_t  USBD_CDC_Audio_Composite_DeInit (USBD_HandleTypeDef *pdev, uint8
 
 	/* DeInit  physical Interface components */
 	if (pdev->pClassData != NULL) {
-		((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->DeInit(0U);
+		AUDIO_DeInit_FS(0U);
 	}
 
 	pdev->pClassData = NULL;
@@ -217,9 +198,7 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 		    		//USBD_DbgLog("USBD_Composite_Setup - CDC");
 		    		if (req->wLength) {
 		    			if (req->bmRequest & 0x80U) {
-		    		    	((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_cdc->Control(req->bRequest,
-		    	                                                            (uint8_t *)(void *)hcdc->data,
-		    	                                                            req->wLength);
+		    				CDC_Control_FS(req->bRequest, (uint8_t *)(void *)hcdc->data, req->wLength);
 
 		    		    	uint16_t len = MIN(CDC_REQ_MAX_DATA_SIZE, req->wLength);
 		    		    	(void)USBD_CtlSendData(pdev, (uint8_t *)hcdc->data, len);
@@ -232,8 +211,7 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 		    			}
 		    		}
 		    		else {
-		    			((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_cdc->Control(req->bRequest,
-		    			                                                          (uint8_t *)(void *)req, 0U);
+		    			CDC_Control_FS(req->bRequest, (uint8_t *)(void *)req, 0U);
 		    		}
 		    		break;
 			    case AUDIO_REQ_GET_CUR:
@@ -361,7 +339,7 @@ static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_
 		PCD_HandleTypeDef *hpcd = pdev->pData;
 
 		if (pdev->pClassData != NULL) {
-			USBD_DbgLog("%lu %lu %lu\r\n", pdev->ep_in[epnum].total_length, pdev->ep_in[epnum].total_length, hpcd->IN_ep[epnum].maxpacket);
+			//USBD_Dbg2Log("%lu %lu %lu\r\n", pdev->ep_in[epnum].total_length, pdev->ep_in[epnum].total_length, hpcd->IN_ep[epnum].maxpacket);
 			if ((pdev->ep_in[epnum].total_length > 0U) && ((pdev->ep_in[epnum].total_length % hpcd->IN_ep[epnum].maxpacket) == 0U)) {
 		    	/* Update the packet total length */
 				pdev->ep_in[epnum].total_length = 0U;
@@ -389,11 +367,8 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 		/* Get received data packet length */
 		uint16_t PacketSize = (uint16_t)USBD_LL_GetRxDataSize(pdev, epnum);
 
-
-
 		/* Packet received Callback */
-		//((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->PeriodicTC(&haudio->buffer[haudio->wr_ptr],
-		//		PacketSize, AUDIO_OUT_TC);
+		//AUDIO_PeriodicTC_FS(&haudio->buffer[haudio->wr_ptr], PacketSize, AUDIO_OUT_TC);
 
 		/* Increment the Buffer pointer or roll it back when all buffers are full */
 		haudio->wr_ptr += PacketSize;
@@ -410,14 +385,13 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 		}
 		if (haudio->offset == AUDIO_OFFSET_UNKNOWN && haudio->wr_ptr >= AUDIO_TOTAL_BUF_SIZE / 2U)
 		{
-			((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->AudioCmd(&haudio->buffer[0],
-					AUDIO_TOTAL_BUF_SIZE / 2U,
-					AUDIO_CMD_START);
+			AUDIO_AudioCmd_FS(&haudio->buffer[0], AUDIO_TOTAL_BUF_SIZE / 2U, AUDIO_CMD_START);
+
 			haudio->offset = AUDIO_OFFSET_NONE;
 			haudio->synch_feedback_tx_flag = 0U;
 		}
-		/* Prepare Out endpoint to receive next audio packet */
 
+		/* Prepare Out endpoint to receive next audio packet */
 		(void)USBD_LL_PrepareReceive(pdev, AUDIO_OUT_EP, &haudio->buffer[haudio->wr_ptr], AUDIO_OUT_MAX_PACKET);
 
 		//USBD_DbgLog("USBD_Composite_DataOut epnum: %u %u %u %u", epnum, haudio->offset, PacketSize, haudio->wr_ptr);
@@ -428,13 +402,10 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 		/* Get the received data length */
 		hcdc->RxLength = USBD_LL_GetRxDataSize(pdev, epnum);
 
-		USBD_DbgLog("USBD_Composite_DataOut - CDC: epnum: %u RxLength: %lu", epnum, hcdc->RxLength);
-
 		/* USB data will be immediately processed, this allow next USB traffic being
 		NAKed till the end of the application Xfer */
 		if (pdev->pClassData != NULL) {
-			((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_cdc->Receive(hcdc->RxBuffer, &hcdc->RxLength);
-			USBD_DbgLog("USBD_Composite_DataOut -OK");
+			CDC_Receive_FS(hcdc->RxBuffer, &hcdc->RxLength);
 		    return USBD_OK;
 		}
 		else {
@@ -455,7 +426,7 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 	//static uint8_t slow_down_flag = 0;
 	//static uint8_t speed_up_flag = 0;
 
-	uint16_t  dma = ((AUDIO_TOTAL_BUF_SIZE >> 1) -__HAL_DMA_GET_COUNTER(hi2s3.hdmatx)) << 1U; // DMA work in half word mode and counts down
+	uint16_t  dma = AUDIO_Get_DMA_Read_Ptr();
 
 	HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
@@ -561,16 +532,14 @@ static uint8_t USBD_CDC_Audio_Composite_EP0_RxReady (USBD_HandleTypeDef *pdev) {
 	    /* In this driver, to simplify code, only SET_CUR request is managed */
 
 	    if (haudio->control.unit == AUDIO_OUT_STREAMING_CTRL) {
-	    	((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->MuteCtl(haudio->control.data[0]);
+	    	AUDIO_MuteCtl_FS(haudio->control.data[0]);
 	    	haudio->control.cmd = 0U;
 	    	haudio->control.len = 0U;
 	    }
 	}
 
 	if ((pdev->pUserData != NULL) && (hcdc->CmdOpCode != 0xFFU)) {
-		((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_cdc->Control(hcdc->CmdOpCode,
-	                                                      (uint8_t *)(void *)hcdc->data,
-	                                                      (uint16_t)hcdc->CmdLength);
+		CDC_Control_FS(hcdc->CmdOpCode, (uint8_t *)(void *)hcdc->data, (uint16_t)hcdc->CmdLength);
 	    hcdc->CmdOpCode = 0xFFU;
 	}
 	return USBD_OK;
@@ -659,7 +628,7 @@ static void AUDIO_OUT_StopAndReset(USBD_HandleTypeDef* pdev)
 	//USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
 	//USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_EP);
 
-	((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->DeInit(0);
+	AUDIO_DeInit_FS(0);
 }
 
 
@@ -671,9 +640,9 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
 {
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
-  //AUDIO_OUT_StopAndReset(pdev);
+	//AUDIO_OUT_StopAndReset(pdev);
 
-  ((USBD_Composite_ItfTypeDef *)pdev->pUserData)->fops_audio->Init(USBD_AUDIO_FREQ, AUDIO_DEFAULT_VOLUME, 0U);
+	AUDIO_Init_FS(USBD_AUDIO_FREQ, AUDIO_DEFAULT_VOLUME, 0U);
 
 	haudio->output_synch_feedback = 0xC0000;
 	haudio->synch_feedback_tx_flag = 0U;

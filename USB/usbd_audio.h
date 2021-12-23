@@ -1,29 +1,6 @@
-/**
-  ******************************************************************************
-  * @file    usbd_audio.h
-  * @author  MCD Application Team
-  * @brief   header file for the usbd_audio.c file.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2015 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                      www.st.com/SLA0044
-  *
-  ******************************************************************************
-  */
-
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __USB_AUDIO_H
 #define __USB_AUDIO_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Includes ------------------------------------------------------------------*/
 #include  "usbd_ioreq.h"
@@ -41,11 +18,6 @@ extern "C" {
 /** @defgroup USBD_AUDIO_Exported_Defines
   * @{
   */
-#ifndef USBD_AUDIO_FREQ
-/* AUDIO Class Config */
-#define USBD_AUDIO_FREQ                               48000U
-#endif /* USBD_AUDIO_FREQ */
-
 
 #ifndef AUDIO_HS_BINTERVAL
 #define AUDIO_HS_BINTERVAL                            0x01U
@@ -157,57 +129,7 @@ typedef struct
 } USBD_AUDIO_HandleTypeDef;
 
 
-typedef struct
-{
-  int8_t (*Init)(uint32_t AudioFreq, uint32_t Volume, uint32_t options);
-  int8_t (*DeInit)(uint32_t options);
-  int8_t (*AudioCmd)(uint8_t *pbuf, uint32_t size, uint8_t cmd);
-  int8_t (*VolumeCtl)(uint8_t vol);
-  int8_t (*MuteCtl)(uint8_t cmd);
-  int8_t (*PeriodicTC)(uint8_t *pbuf, uint32_t size, uint8_t cmd);
-  int8_t (*GetState)(void);
-} USBD_AUDIO_ItfTypeDef;
-/**
-  * @}
-  */
 
-
-
-/** @defgroup USBD_CORE_Exported_Macros
-  * @{
-  */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBD_CORE_Exported_Variables
-  * @{
-  */
-
-extern USBD_ClassTypeDef USBD_AUDIO;
-#define USBD_AUDIO_CLASS &USBD_AUDIO
-/**
-  * @}
-  */
-
-
-void USBD_AUDIO_Sync(USBD_HandleTypeDef *pdev, AUDIO_OffsetTypeDef offset);
-/**
-  * @}
-  */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* __USB_AUDIO_H */
-/**
-  * @}
-  */
 
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
