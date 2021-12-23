@@ -5,8 +5,6 @@
 
 
 #define AUDIO_SAMPLE_FREQ(frq)         (uint8_t)(frq), (uint8_t)((frq >> 8)), (uint8_t)((frq >> 16))
-#define AUDIO_PACKET_SZE(frq)          (uint8_t)(((frq /1000U + 1) * 2U * 2U) & 0xFFU), \
-                                       (uint8_t)((((frq /1000U + 1) * 2U * 2U) >> 8) & 0xFFU)
 
 #define  USB_DESC_TYPE_DEVICE                           0x01U
 #define  USB_DESC_TYPE_CONFIGURATION                    0x02U
@@ -198,7 +196,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType */
 	COMPOSITE_AUDIO_OUT_EP,                              /* bEndpointAddress 1 out endpoint*/
 	USBD_EP_TYPE_ISOC | USBD_EP_SYNCH_TYPE_ASYNCHRONOUS, /* bmAttributes */
-	AUDIO_PACKET_SZE(USBD_AUDIO_FREQ),                   /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
+	(uint8_t)(AUDIO_OUT_MAX_PACKET & 0xFFU),             /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
+	(uint8_t)((AUDIO_OUT_MAX_PACKET >> 8) & 0xFFU),
 	0x01,                                                /* bInterval */
 	0x00,                                                /* bRefresh */
 	COMPOSITE_AUDIO_OUT_SYNCH_EP,                        /* bSynchAddress */

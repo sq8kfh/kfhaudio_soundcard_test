@@ -135,36 +135,11 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceFS.pClassData)->haudio;
 	if (haudio) {
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
-				dma <<= 1;
-				uint16_t usb = haudio->wr_ptr;
-				uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
+		dma <<= 1;
+		uint16_t usb = haudio->wr_ptr;
+		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-				printf("H %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, tx_flag, feedback_data, sync_diff, dma, usb);
-
-		/*uint16_t space = 0;
-		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
-		uint16_t space_conuter = 0;
-
-		for (int i = 0; i < AUDIO_TOTAL_BUF_SIZE / 2; i += 4) {
-			i2s_buffer[i] = haudio->buffer[haudio->rd_ptr];
-			haudio->rd_ptr++;
-			i2s_buffer[i+1] = haudio->buffer[haudio->rd_ptr];
-			haudio->rd_ptr++;
-			i2s_buffer[i+2] = haudio->buffer[haudio->rd_ptr];
-			haudio->rd_ptr++;
-			i2s_buffer[i+3] = haudio->buffer[haudio->rd_ptr];
-			haudio->rd_ptr++;
-
-			if (sync_diff && !space_conuter) {
-				haudio->rd_ptr -= 4;
-				sync_diff--;
-				space_conuter = space;
-			}
-			else {
-				space_conuter--;
-			}
-			if (haudio->rd_ptr == AUDIO_TOTAL_BUF_SIZE) haudio->rd_ptr = 0U;
-		}*/
+		printf("H %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->output_synch_feedback, sync_diff, dma, usb);
 	}
 }
 
@@ -173,41 +148,15 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 	USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceFS.pClassData)->haudio;
 	if (haudio) {
-		//uint16_t diff = haudio->rd_ptr > haudio->wr_ptr ? AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + haudio->wr_ptr : haudio->wr_ptr - haudio->rd_ptr;
-		//uint16_t sync_diff = diff < (AUDIO_TOTAL_BUF_SIZE / 2U) ? (AUDIO_TOTAL_BUF_SIZE / 2U) - diff : 0;
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
 		dma <<= 1;
 		uint16_t usb = haudio->wr_ptr;
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-		printf("F %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, tx_flag, feedback_data, sync_diff, dma, usb);
-		/*uint16_t space = 0;
-		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
-		uint16_t space_conuter = 0;
-
-		for (int i = AUDIO_TOTAL_BUF_SIZE / 2U; i < AUDIO_TOTAL_BUF_SIZE; i += 4) {
-				i2s_buffer[i] = haudio->buffer[haudio->rd_ptr];
-				haudio->rd_ptr++;
-				i2s_buffer[i+1] = haudio->buffer[haudio->rd_ptr];
-				haudio->rd_ptr++;
-				i2s_buffer[i+2] = haudio->buffer[haudio->rd_ptr];
-				haudio->rd_ptr++;
-				i2s_buffer[i+3] = haudio->buffer[haudio->rd_ptr];
-				haudio->rd_ptr++;
-
-				if (sync_diff && !space_conuter) {
-					haudio->rd_ptr -= 4;
-					sync_diff--;
-					space_conuter = space;
-				}
-				else {
-					space_conuter--;
-				}
-				if (haudio->rd_ptr == AUDIO_TOTAL_BUF_SIZE) haudio->rd_ptr = 0U;
-		}*/
+		printf("F %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->output_synch_feedback, sync_diff, dma, usb);
 	}
 }
-void sent_feedback(void);
+
 /* USER CODE END 0 */
 
 /**
