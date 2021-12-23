@@ -126,6 +126,8 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 extern volatile uint32_t irq_count;
 extern volatile uint32_t feedback_data __attribute__ ((aligned(4)));
 extern volatile uint32_t tx_flag;
+extern uint8_t slow_down_flag;
+extern uint8_t speed_up_flag;
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
@@ -137,8 +139,7 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 				uint16_t usb = haudio->wr_ptr;
 				uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-				//printf("F %u %u %u %lx\r\n", AUDIO_TOTAL_BUF_SIZE, haudio->wr_ptr, dma, feedback_data);
-				printf("H %u %u %u 0x%lx %u\r\n", tx_flag, dma, usb, feedback_data, sync_diff);
+				printf("H %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, tx_flag, feedback_data, sync_diff, dma, usb);
 
 		/*uint16_t space = 0;
 		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
@@ -179,8 +180,7 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t usb = haudio->wr_ptr;
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-		//printf("F %u %u %u %lx\r\n", AUDIO_TOTAL_BUF_SIZE, haudio->wr_ptr, dma, feedback_data);
-		printf("F %u %u %u 0x%lx %u\r\n", tx_flag, dma, usb, feedback_data, sync_diff);
+		printf("F %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, tx_flag, feedback_data, sync_diff, dma, usb);
 		/*uint16_t space = 0;
 		if (sync_diff) space = AUDIO_TOTAL_BUF_SIZE / 2U / sync_diff / 4;
 		uint16_t space_conuter = 0;

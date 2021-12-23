@@ -451,10 +451,15 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 	return USBD_OK;
 }
 
+ uint8_t slow_down_flag = 0;
+ uint8_t speed_up_flag = 0;
 
 static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 	static uint16_t SOF_num = 0;
-	uint16_t  dma = __HAL_DMA_GET_COUNTER(hi2s3.hdmatx);
+	//static uint8_t slow_down_flag = 0;
+	//static uint8_t speed_up_flag = 0;
+
+	uint16_t  dma = ((AUDIO_TOTAL_BUF_SIZE >> 1) -__HAL_DMA_GET_COUNTER(hi2s3.hdmatx)) << 1U; // DMA work in half word mode and counts down
 
 	HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
@@ -466,16 +471,30 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 		if (SOF_num == (1 << USBD_AUDIO_FEEDBACK_SOF_RATE) && haudio->offset == AUDIO_OFFSET_NONE) {
 			SOF_num = 0;
 
-			if (dma < last_dma) {
-				feedback_data = last_dma - dma;
+			if (dma > last_dma) {
+				feedback_data = dma - last_dma;
 			}
 			else {
-				feedback_data = AUDIO_TOTAL_BUF_SIZE / 2 - dma + last_dma;
+				feedback_data = AUDIO_TOTAL_BUF_SIZE /*/ 2*/ - last_dma + dma;
 			}
-			feedback_data <<= 1; // DMA work in half word mode
+			/*feedback_data <<= 1; // DMA work in half word mode*/
 			last_dma = dma;
 			feedback_data <<= (8 - USBD_AUDIO_FEEDBACK_SOF_RATE);
+
+			uint16_t sync_diff = dma < haudio->wr_ptr ? haudio->wr_ptr - dma : AUDIO_TOTAL_BUF_SIZE - dma + haudio->wr_ptr;
+
+			if (sync_diff < (AUDIO_TOTAL_BUF_SIZE/2 - 2000) || ((sync_diff < AUDIO_TOTAL_BUF_SIZE/2) && speed_up_flag)) speed_up_flag = 1;
+			else speed_up_flag = 0;
+
+			if (sync_diff > (AUDIO_TOTAL_BUF_SIZE/2 + 2000) || ((sync_diff > AUDIO_TOTAL_BUF_SIZE/2) && slow_down_flag)) slow_down_flag = 1;
+			else slow_down_flag = 0;
+
+			if (speed_up_flag) feedback_data += (1 << 8); //0.25kHz
+			else if (slow_down_flag) feedback_data -= (1 << 8); //0.25kHz
+
 			feedback_data <<= 4; // align to the to left of 3-byte
+
+			//printf("%u %u 0x%lx %u %u %u\n", slow_down_flag, speed_up_flag, feedback_data, sync_diff, dma, usb);
 
 			feedbacktable[0] = feedback_data;
 			feedbacktable[1] = feedback_data >> 8;
