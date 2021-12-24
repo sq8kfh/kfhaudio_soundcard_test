@@ -4,6 +4,25 @@
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern I2S_HandleTypeDef hi2s3;
+extern I2C_HandleTypeDef hi2c1;
+
+#define AUDIO_I2C_ADDR	0x94
+
+static void cs43l22_write(uint8_t reg, uint8_t value)
+{
+	HAL_I2C_Mem_Write(&hi2c1, AUDIO_I2C_ADDR, reg, 1, &value, sizeof(value), HAL_MAX_DELAY);
+}
+
+static void cs43l22_init(void)
+{
+	HAL_GPIO_WritePin(AUDIO_RST_GPIO_Port, AUDIO_RST_Pin, GPIO_PIN_SET);
+
+	cs43l22_write(0x04, 0xaf);
+	cs43l22_write(0x06, 0x07);
+	cs43l22_write(0x02, 0x9e);
+
+	cs43l22_write(0x0a, 0x0a);
+}
 
 /**
   * @brief  Initializes the AUDIO media low layer over USB FS IP
@@ -19,6 +38,12 @@ int8_t AUDIO_Init_FS(uint32_t AudioFreq, uint32_t Volume, uint32_t options)
   UNUSED(AudioFreq);
   UNUSED(Volume);
   UNUSED(options);
+
+  cs43l22_init();
+
+  //cs43l22_write(0x22, 0x00);
+  //cs43l22_write(0x23, 0x00);
+  cs43l22_write(0x0F, 0x00);
   return (USBD_OK);
   /* USER CODE END 0 */
 }
@@ -32,9 +57,13 @@ int8_t AUDIO_DeInit_FS(uint32_t options)
 {
   /* USER CODE BEGIN 1 */
 	printf("AUDIO_DeInit_FS\r\n");
+
+	cs43l22_write(0x0F, 0xc0);
+	//cs43l22_write(0x23, 0x01);
+
   UNUSED(options);
   extern I2S_HandleTypeDef hi2s3;
-  HAL_I2S_DMAStop(&hi2s3);
+  //HAL_I2S_DMAStop(&hi2s3);
   return (USBD_OK);
   /* USER CODE END 1 */
 }

@@ -195,9 +195,9 @@ int main(void)
   printf("Starting usb...\r\n");
   MX_USB_DEVICE_Init();
 
-  cs43l22_init();
+  //cs43l22_init();
   //play_tone();
-  i2s_start();
+  //i2s_start();
   printf("Start\r\n");
   /* USER CODE END 2 */
 
