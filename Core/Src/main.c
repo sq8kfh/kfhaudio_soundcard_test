@@ -56,9 +56,9 @@ PCD_HandleTypeDef hpcd_USB_OTG_HS;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_I2S3_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_DMA_Init(void);
+static void MX_I2S3_Init(void);
 static void MX_USB_OTG_HS_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -72,7 +72,7 @@ int __io_putchar(int ch) {
 	return ch;
 }
 
-#define BUFFER_SIZE		4800
+#define BUFFER_SIZE		9600
 
 static int16_t audio_data[2 * BUFFER_SIZE];
 
@@ -84,12 +84,7 @@ void play_tone(void)
         audio_data[i * 2 + 1] = value;
     }
 
-    //cs43l22_init();
-    HAL_I2S_Transmit_DMA(&hi2s3, (int16_t*)audio_data, 2 * BUFFER_SIZE);
-    /*while (1)
-    {
-    	HAL_I2S_Transmit(&hi2s3, (int16_t*)audio_data, 2 * BUFFER_SIZE, HAL_MAX_DELAY);
-    }*/
+    HAL_I2S_Transmit_DMA(&hi2s3, audio_data, 2*BUFFER_SIZE);
 }
 
 extern USBD_HandleTypeDef hUsbDeviceHS;
@@ -107,9 +102,8 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
 	USBD_AUDIO_HandleTypeDef *haudio;
-	printf("H\r\n");
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceHS.pClassData)->haudio;
-	if (0 && haudio) {
+	if (haudio) {
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
 		dma <<= 1;
 		uint16_t usb = haudio->wr_ptr;
@@ -121,12 +115,9 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	MX_DMA_Init();
-	HAL_I2S_Transmit_DMA(&hi2s3, (int16_t*)audio_data, 2 * BUFFER_SIZE);
-	printf("F\r\n");
 	USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceHS.pClassData)->haudio;
-	if (0 && haudio) {
+	if (haudio) {
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
 		dma <<= 1;
 		uint16_t usb = haudio->wr_ptr;
@@ -166,15 +157,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2S3_Init();
   MX_USART3_UART_Init();
   MX_DMA_Init();
+  MX_I2S3_Init();
   /* USER CODE BEGIN 2 */
   printf("Starting usb...\r\n");
-  //MX_USB_DEVICE_Init();
+  MX_USB_DEVICE_Init();
 
     //cs43l22_init();
-    play_tone();
+    //play_tone();
     //i2s_start();
   printf("Start\r\n");
   /* USER CODE END 2 */
@@ -399,6 +390,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  printf("error");
   }
   /* USER CODE END Error_Handler_Debug */
 }

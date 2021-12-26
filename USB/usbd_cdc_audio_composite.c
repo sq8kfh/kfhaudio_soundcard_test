@@ -468,7 +468,7 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 		/* Transmit feedback only when the last one is transmitted */
 		if (haudio->synch_feedback_tx_flag == 0U) {
 		      /* Get FNSOF. Use volatile for fnsof_new since its address is mapped to a hardware register. */
-		      USB_OTG_GlobalTypeDef* USBx = USB_OTG_FS;
+		      USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
 		      uint32_t USBx_BASE = (uint32_t)USBx;
 		      uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 
@@ -496,7 +496,7 @@ static uint8_t USBD_CDC_Audio_Composite_IsoINIncomplete(USBD_HandleTypeDef *pdev
 
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
-	USB_OTG_GlobalTypeDef* USBx = USB_OTG_FS;
+	USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
 	uint32_t USBx_BASE = (uint32_t)USBx;
 	haudio->synch_feedback_fnsof = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 
