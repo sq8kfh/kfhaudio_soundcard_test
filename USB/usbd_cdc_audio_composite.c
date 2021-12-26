@@ -5,8 +5,8 @@
 #include "usbd_ctlreq.h"
 #include "usbd_audio_if.h"
 #include "usbd_cdc_if.h"
-#include "stm32f4xx_hal_dma.h"
-#include "stm32f4xx_hal_i2s.h"
+#include "stm32f2xx_hal_dma.h"
+#include "stm32f2xx_hal_i2s.h"
 
 
 static uint8_t USBD_CDC_Audio_Composite_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
@@ -62,11 +62,11 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     /* Open EP OUT */
     USBD_LL_OpenEP(pdev, COMPOSITE_AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, AUDIO_OUT_PACKET + 4);
     pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].is_used = 1U;
-    pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].bInterval = AUDIO_FS_BINTERVAL;
+    //pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].bInterval = AUDIO_FS_BINTERVAL;
 
     USBD_LL_OpenEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP, USBD_EP_TYPE_ISOC, 3U);
     pdev->ep_in[COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU].is_used = 1U;
-    pdev->ep_in[COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU].bInterval = AUDIO_FS_BINTERVAL;
+    //pdev->ep_in[COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU].bInterval = AUDIO_FS_BINTERVAL;
 
     USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
 
@@ -108,7 +108,7 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     /* Open EP OUT - CMD */
     USBD_LL_OpenEP(pdev, COMPOSITE_CDC_CMD_EP, USBD_EP_TYPE_INTR, CDC_CMD_PACKET_SIZE);
     pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].is_used = 1U;
-    pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = CDC_FS_BINTERVAL;
+    //pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = CDC_FS_BINTERVAL;
 
     hcdc = &hcomposite.hcdc;
 
@@ -146,7 +146,7 @@ static uint8_t  USBD_CDC_Audio_Composite_DeInit (USBD_HandleTypeDef *pdev, uint8
 	  /* Close Command IN EP */
 	USBD_LL_CloseEP(pdev, COMPOSITE_CDC_CMD_EP);
 	pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].is_used = 0U;
-	pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = 0U;
+	//pdev->ep_in[COMPOSITE_CDC_CMD_EP & 0xFU].bInterval = 0U;
 
 	/* DeInit  physical Interface components */
 	if (pdev->pClassData != NULL) {
@@ -159,11 +159,11 @@ static uint8_t  USBD_CDC_Audio_Composite_DeInit (USBD_HandleTypeDef *pdev, uint8
 
 	USBD_LL_CloseEP(pdev, COMPOSITE_AUDIO_OUT_EP);
 	pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].is_used = 0U;
-	pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].bInterval = 0U;
+	//pdev->ep_out[COMPOSITE_AUDIO_OUT_EP & 0xFU].bInterval = 0U;
 
 	USBD_LL_CloseEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
 	pdev->ep_in[COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU].is_used = 0U;
-	pdev->ep_in[COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU].bInterval = 0U;
+	//pdev->ep_in[COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU].bInterval = 0U;
 
 	/* DeInit  physical Interface components */
 	if (pdev->pClassData != NULL) {
@@ -331,7 +331,7 @@ static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
 	if (epnum == (COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU)) {
-		HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
 		haudio->synch_feedback_tx_flag = 0U;
 	}
 	else if (epnum == (COMPOSITE_CDC_IN_EP & 0x0FU)) {
@@ -428,8 +428,7 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 
 	uint16_t  dma = AUDIO_Get_DMA_Read_Ptr();
 
-	HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
 
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 	if (haudio->alt_output_setting == 1)
@@ -494,7 +493,6 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 
 static uint8_t USBD_CDC_Audio_Composite_IsoINIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	// epnum is always 0
-	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
 
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
@@ -555,14 +553,14 @@ static uint8_t *USBD_CDC_Audio_Composite_GetCfgDesc (uint16_t *length) {
 __ALIGN_BEGIN static uint8_t USBD_CDC_Audio_Composite_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
     USB_LEN_DEV_QUALIFIER_DESC,
 	USB_DESC_TYPE_DEVICE_QUALIFIER,
-	0x00,                       /* bcdUSB */
-	0x02,
-	0xEF,                       /* bDeviceClass */
-	0x02,                       /* bDeviceSubClass */
-	0x01,                       /* bDeviceProtocol */
-	0x40,                       /* bMaxPacketSize0 */
-	0x01,                       /* bNumConfigurations */
 	0x00,
+	0x02,
+	0x00,
+	0x00,
+	0x00,
+	0x40,
+	0x01,
+	0x00
 };
 
 uint8_t  *USBD_CDC_Audio_Composite_GetDeviceQualifierDescriptor (uint16_t *length) {

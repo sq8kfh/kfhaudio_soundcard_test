@@ -2,20 +2,20 @@
 #include "usbd_cdc_audio_composite.h"
 
 
-extern USBD_HandleTypeDef hUsbDeviceFS;
+extern USBD_HandleTypeDef hUsbDeviceHS;
 extern I2S_HandleTypeDef hi2s3;
-extern I2C_HandleTypeDef hi2c1;
+//extern I2C_HandleTypeDef hi2c1;
 
 #define AUDIO_I2C_ADDR	0x94
 
 static void cs43l22_write(uint8_t reg, uint8_t value)
 {
-	HAL_I2C_Mem_Write(&hi2c1, AUDIO_I2C_ADDR, reg, 1, &value, sizeof(value), HAL_MAX_DELAY);
+	//HAL_I2C_Mem_Write(&hi2c1, AUDIO_I2C_ADDR, reg, 1, &value, sizeof(value), HAL_MAX_DELAY);
 }
 
 static void cs43l22_init(void)
 {
-	HAL_GPIO_WritePin(AUDIO_RST_GPIO_Port, AUDIO_RST_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(AUDIO_RST_GPIO_Port, AUDIO_RST_Pin, GPIO_PIN_SET);
 
 	cs43l22_write(0x04, 0xaf);
 	cs43l22_write(0x06, 0x07);
@@ -62,7 +62,7 @@ int8_t AUDIO_DeInit_FS(uint32_t options)
 	//cs43l22_write(0x23, 0x01);
 
   UNUSED(options);
-  extern I2S_HandleTypeDef hi2s3;
+  //extern I2S_HandleTypeDef hi2s3;
   //HAL_I2S_DMAStop(&hi2s3);
   return (USBD_OK);
   /* USER CODE END 1 */

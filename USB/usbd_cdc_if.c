@@ -10,7 +10,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 /** Data to send over USB CDC are stored in this buffer   */
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
-extern USBD_HandleTypeDef hUsbDeviceFS;
+extern USBD_HandleTypeDef hUsbDeviceHS;
 
 
 /**
@@ -22,8 +22,8 @@ int8_t CDC_Init_FS(void)
   /* USER CODE BEGIN 3 */
 	//printf("CDC_Init_FS\r\n");
   /* Set Application Buffers */
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+  USBD_CDC_SetTxBuffer(&hUsbDeviceHS, UserTxBufferFS, 0);
+  USBD_CDC_SetRxBuffer(&hUsbDeviceHS, UserRxBufferFS);
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -112,7 +112,7 @@ int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     case CDC_SET_CONTROL_LINE_STATE:
     	if (length == 0) {
     		USBD_SetupReqTypedef *req = (USBD_SetupReqTypedef *)pbuf;
-    		if(req->wValue & 1)
+    		/*if(req->wValue & 1)
     			HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_SET); // zapalenie DTR
     		else
     			HAL_GPIO_WritePin(LED_ORANGE_GPIO_Port, LED_ORANGE_Pin, GPIO_PIN_RESET); // zgaszenie DTR
@@ -120,7 +120,7 @@ int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     		if(req->wValue & 2)
     			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET); // zapalenie RTS
     		else
-    			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET); // zgaszenie RTS
+    			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET); // zgaszenie RTS*/
     	}
     break;
 
@@ -154,8 +154,8 @@ int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+  USBD_CDC_SetRxBuffer(&hUsbDeviceHS, &Buf[0]);
+  USBD_CDC_ReceivePacket(&hUsbDeviceHS);
 
   uint16_t len = *Len;
   CDC_Transmit_FS (Buf, len);
@@ -181,13 +181,13 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   //USBD_CDC_HandleTypeDef  *hcdc = NULL; //&(((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc);
   //USBD_CDC_HandleTypeDef *hcdc = &((USBD_Composite_HandleTypeDef*)(hUsbDeviceFS.pClassData)->hcdc);
 
-  USBD_CDC_HandleTypeDef  *hcdc = &(((USBD_Composite_HandleTypeDef*)(hUsbDeviceFS.pClassData))->hcdc);
+  USBD_CDC_HandleTypeDef  *hcdc = &(((USBD_Composite_HandleTypeDef*)(hUsbDeviceHS.pClassData))->hcdc);
 
   if (hcdc->TxState != 0){
     return USBD_BUSY;
   }
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
-  result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+  USBD_CDC_SetTxBuffer(&hUsbDeviceHS, Buf, Len);
+  result = USBD_CDC_TransmitPacket(&hUsbDeviceHS);
   /* USER CODE END 7 */
   return result;
 }
