@@ -59,6 +59,14 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_GREEN_Pin GPIO_PIN_0
 #define LED_GREEN_GPIO_Port GPIOB
+#define SOF_P_Pin GPIO_PIN_7
+#define SOF_P_GPIO_Port GPIOE
+#define CO_P_Pin GPIO_PIN_8
+#define CO_P_GPIO_Port GPIOE
+#define TX_P_Pin GPIO_PIN_12
+#define TX_P_GPIO_Port GPIOE
+#define IN_P_Pin GPIO_PIN_15
+#define IN_P_GPIO_Port GPIOE
 #define LED_BLUE_Pin GPIO_PIN_7
 #define LED_BLUE_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */

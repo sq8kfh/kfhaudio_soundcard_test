@@ -109,7 +109,7 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t usb = haudio->wr_ptr;
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-		printf("H %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->output_synch_feedback, sync_diff, dma, usb);
+		printf("H %u %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
 	}
 }
 
@@ -123,7 +123,7 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t usb = haudio->wr_ptr;
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-		printf("F %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->output_synch_feedback, sync_diff, dma, usb);
+		printf("F %u %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
 	}
 }
 
@@ -360,11 +360,15 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED_GREEN_Pin|LED_BLUE_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, SOF_P_Pin|CO_P_Pin|TX_P_Pin|IN_P_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : LED_GREEN_Pin LED_BLUE_Pin */
   GPIO_InitStruct.Pin = LED_GREEN_Pin|LED_BLUE_Pin;
@@ -372,6 +376,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SOF_P_Pin CO_P_Pin TX_P_Pin IN_P_Pin */
+  GPIO_InitStruct.Pin = SOF_P_Pin|CO_P_Pin|TX_P_Pin|IN_P_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
 }
 

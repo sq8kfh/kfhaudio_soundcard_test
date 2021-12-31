@@ -7,6 +7,7 @@
 #include "usbd_cdc_if.h"
 #include "stm32f2xx_hal_dma.h"
 #include "stm32f2xx_hal_i2s.h"
+#include <math.h>
 
 
 static uint8_t USBD_CDC_Audio_Composite_Init(USBD_HandleTypeDef *pdev, uint8_t cfgidx);
@@ -28,6 +29,8 @@ static void AUDIO_REQ_GetCurrent(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef 
 static void AUDIO_REQ_SetCurrent(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *req);
 static void AUDIO_OUT_StopAndReset(USBD_HandleTypeDef* pdev);
 static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev);
+static void AUDIO_IN_StopAndReset(USBD_HandleTypeDef* pdev);
+static void AUDIO_IN_Restart(USBD_HandleTypeDef* pdev);
 
 
 USBD_ClassTypeDef USBD_Composite = {
@@ -47,10 +50,18 @@ USBD_ClassTypeDef USBD_Composite = {
 	USBD_CDC_Audio_Composite_GetDeviceQualifierDescriptor,
 };
 
- USBD_Composite_HandleTypeDef hcomposite;
+USBD_Composite_HandleTypeDef hcomposite;
 
+uint16_t dummy[AUDIO_OUT_PACKET/2] = {0};
 
 static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t cfgidx) {
+
+	for (int i = 0; i < AUDIO_OUT_PACKET/4; i++) {
+	        int16_t value = (int16_t)(32000.0 * sin(2.0 * M_PI * i / 48.0));
+	        dummy[i * 2] = value;
+	        dummy[i * 2 + 1] = value;
+	    }
+
 	USBD_DbgLog("USBD_Composite_Init cfgidx: %d" ,cfgidx);
 	USBD_AUDIO_HandleTypeDef *haudio;
 	USBD_CDC_HandleTypeDef   *hcdc;
@@ -74,6 +85,9 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
 #ifdef USB_AUDIO_MIC_ON
     USBD_LL_OpenEP(pdev, COMPOSITE_AUDIO_IN_EP, USBD_EP_TYPE_ISOC, AUDIO_OUT_PACKET);
     pdev->ep_in[COMPOSITE_AUDIO_IN_EP & 0xFU].is_used = 1U;
+
+    //USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_IN_EP);
+    //USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, dummy, AUDIO_OUT_PACKET);
 #endif
 
     /* Allocate Audio structure */
@@ -273,7 +287,7 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 					break;
 				case USB_REQ_SET_INTERFACE: //bmRequest == 1
 					if (pdev->dev_state == USBD_STATE_CONFIGURED) {
-						if (req->wIndex == COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE) { //check if audio interface
+						if (req->wIndex == COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE) { //check if audio out interface
 							if ((uint8_t)(req->wValue) <= 1) {
 								if (haudio->alt_output_setting != (uint8_t)(req->wValue)) {
 									haudio->alt_output_setting = (uint8_t)(req->wValue);
@@ -293,9 +307,17 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 							}
 						}
 #ifdef USB_AUDIO_MIC_ON
-						else if (req->wIndex == COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE) { //check if audio interface
+						else if (req->wIndex == COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE) { //check if audio in interface
 							if ((uint8_t)(req->wValue) <= 1) {
-								haudio->alt_input_setting = (uint8_t)(req->wValue);
+								if (haudio->alt_input_setting != (uint8_t)(req->wValue)) {
+									haudio->alt_input_setting = (uint8_t)(req->wValue);
+									if (haudio->alt_input_setting == 0U) {
+										AUDIO_IN_StopAndReset(pdev);
+									}
+									else {
+										AUDIO_IN_Restart(pdev);
+									}
+								}
 							}
 							else {
 								//Call the error management function (command will be nacked
@@ -325,14 +347,30 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 	return ret;
 }
 
+volatile uint8_t need_tx = 0;
+volatile uint16_t SOF_num = 0;
 
 static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum) {
-	//USBD_DbgLog("USBD_Composite_DataIn epnum: %u", epnum);
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
 	if (epnum == (COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU)) {
 		HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
 		haudio->synch_feedback_tx_flag = 0U;
+
+		HAL_GPIO_WritePin(CO_P_GPIO_Port, CO_P_Pin, GPIO_PIN_SET);
+
+		need_tx = 0;
+		SOF_num = 1;
+	}
+	else if (epnum == (COMPOSITE_AUDIO_IN_EP & 0xFU)) {
+		//uint32_t c = ((PCD_HandleTypeDef *)(pdev->pData))->IN_ep[COMPOSITE_AUDIO_IN_EP & 0xFU].xfer_count;
+		//	uint32_t l = ((PCD_HandleTypeDef *)(pdev->pData))->IN_ep[COMPOSITE_AUDIO_IN_EP & 0xFU].xfer_len;
+			//((PCD_HandleTypeDef *)(pdev->pData))->IN_ep[COMPOSITE_AUDIO_IN_EP & 0xFU].tx_fifo_num
+			//printf("%lu %lu\r\n", c, l);
+
+		//HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
+		//USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, dummy, AUDIO_OUT_PACKET);
+		//printf("M %lu\r\n", tmp);
 	}
 	else if (epnum == (COMPOSITE_CDC_IN_EP & 0x0FU)) {
 		USBD_CDC_HandleTypeDef *hcdc = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc;
@@ -419,16 +457,34 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
  uint8_t slow_down_flag = 0;
  uint8_t speed_up_flag = 0;
 
+ uint8_t feedbacktable[3];
+
 static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
-	static uint16_t SOF_num = 0;
+	//static uint16_t SOF_num = 0;
 	static uint16_t last_dma = 0;
-	static uint8_t feedbacktable[3];
+	//static uint8_t feedbacktable[3];
 	//static uint8_t slow_down_flag = 0;
 	//static uint8_t speed_up_flag = 0;
 
 	uint16_t  dma = AUDIO_Get_DMA_Read_Ptr();
 
 	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
+
+	USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
+	uint32_t USBx_BASE = (uint32_t)USBx;
+	uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+
+	HAL_GPIO_WritePin(CO_P_GPIO_Port, CO_P_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(IN_P_GPIO_Port, IN_P_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(TX_P_GPIO_Port, TX_P_Pin, GPIO_PIN_RESET);
+
+	if (fnsof_new & 0x1) {
+		HAL_GPIO_WritePin(SOF_P_GPIO_Port, SOF_P_Pin, GPIO_PIN_RESET);
+	}
+	else {
+		HAL_GPIO_WritePin(SOF_P_GPIO_Port, SOF_P_Pin, GPIO_PIN_SET);
+	}
 
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 	if (haudio->alt_output_setting == 1)
@@ -460,13 +516,16 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 
 			haudio->output_synch_feedback <<= 4; // align to the to left of 3-byte
 
+			need_tx = 1;
 		}
-		else if (haudio->offset != AUDIO_OFFSET_NONE) {
+		else if (SOF_num == (1 << USBD_AUDIO_FEEDBACK_SOF_RATE) && haudio->offset != AUDIO_OFFSET_NONE) {
 			SOF_num = 0;
+			need_tx = 1;
 		}
 
 		/* Transmit feedback only when the last one is transmitted */
-		if (haudio->synch_feedback_tx_flag == 0U) {
+
+		if (haudio->synch_feedback_tx_flag == 0U && need_tx == 1) {
 		      /* Get FNSOF. Use volatile for fnsof_new since its address is mapped to a hardware register. */
 		      USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
 		      uint32_t USBx_BASE = (uint32_t)USBx;
@@ -477,32 +536,40 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 		    	  feedbacktable[1] = haudio->output_synch_feedback >> 8;
 		    	  feedbacktable[2] = haudio->output_synch_feedback >> 16;
 
+		    	  HAL_GPIO_WritePin(TX_P_GPIO_Port, TX_P_Pin, GPIO_PIN_SET);
 		    	  USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP, feedbacktable, 3);
 
 		    	  /* Block transmission until it's finished. */
 		    	  haudio->synch_feedback_tx_flag = 1U;
 		      }
 		 }
+
 	}
 	else {
 		last_dma = dma;
+		SOF_num = 0;
 	}
 	return USBD_OK;
 }
 
 
 static uint8_t USBD_CDC_Audio_Composite_IsoINIncomplete(USBD_HandleTypeDef *pdev, uint8_t epnum) {
-	// epnum is always 0
-
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
-	USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
-	uint32_t USBx_BASE = (uint32_t)USBx;
-	haudio->synch_feedback_fnsof = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(IN_P_GPIO_Port, IN_P_Pin, GPIO_PIN_SET);
 
 	if (haudio->synch_feedback_tx_flag == 1U) {
 		haudio->synch_feedback_tx_flag = 0U;
-	    USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
+
+		USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
+		uint32_t USBx_BASE = (uint32_t)USBx;
+
+		haudio->synch_feedback_fnsof = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+		USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
+
+		need_tx = 1;
 	}
 	return USBD_OK;
 }
@@ -529,7 +596,12 @@ static uint8_t USBD_CDC_Audio_Composite_EP0_RxReady (USBD_HandleTypeDef *pdev) {
 	if (haudio->control.cmd == AUDIO_REQ_SET_CUR) {
 	    /* In this driver, to simplify code, only SET_CUR request is managed */
 
-	    if (haudio->control.unit == AUDIO_OUT_STREAMING_CTRL) {
+	    if (haudio->control.unit == COMPOSITE_AUDIOCONTROL_SPK_FEATURE_UNIT_ID) {
+	    	AUDIO_MuteCtl_FS(haudio->control.data[0]);
+	    	haudio->control.cmd = 0U;
+	    	haudio->control.len = 0U;
+	    }
+	    else if (haudio->control.unit == COMPOSITE_AUDIOCONTROL_MIC_FEATURE_UNIT_ID) {
 	    	AUDIO_MuteCtl_FS(haudio->control.data[0]);
 	    	haudio->control.cmd = 0U;
 	    	haudio->control.len = 0U;
@@ -640,8 +712,27 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
 
 	//AUDIO_OUT_StopAndReset(pdev);
 
+	USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
+
 	AUDIO_Init_FS(USBD_AUDIO_FREQ, AUDIO_DEFAULT_VOLUME, 0U);
 
 	haudio->output_synch_feedback = 0xC0000;
 	haudio->synch_feedback_tx_flag = 0U;
+	need_tx = 1;
+}
+
+
+static void AUDIO_IN_StopAndReset(USBD_HandleTypeDef* pdev)
+{
+	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
+
+	USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_IN_EP);
+}
+
+
+static void AUDIO_IN_Restart(USBD_HandleTypeDef* pdev)
+{
+	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
+
+	USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, dummy, AUDIO_OUT_PACKET);
 }

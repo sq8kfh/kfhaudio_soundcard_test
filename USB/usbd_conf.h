@@ -34,14 +34,14 @@
 #define USBD_INTERFACE_STRING_FS                      "AUDIO Interface"
 
 #define USB_SIZ_BOS_DESC                              0x0C
-
+//#define USB_AUDIO_MIC_ON                              1
 
 #define COMPOSITE_AUDIO_OUT_EP                        0x01U  /* EP1 for data OUT */
 #define COMPOSITE_AUDIO_OUT_SYNCH_EP                  0x81U  /* EP1 for data IN */
-#define COMPOSITE_AUDIO_IN_EP                         0x83U  /* EP2 for data IN */
-#define COMPOSITE_CDC_OUT_EP                          0x02U  /* EP2 for data OUT */
-#define COMPOSITE_CDC_IN_EP                           0x82U  /* EP2 for data IN */
-#define COMPOSITE_CDC_CMD_EP                          0x83U  /* EP3 for CDC commands */
+#define COMPOSITE_AUDIO_IN_EP                         0x82U  /* EP2 for data IN */
+#define COMPOSITE_CDC_OUT_EP                          0x03U  /* EP3 for data OUT */
+#define COMPOSITE_CDC_IN_EP                           0x83U  /* EP3 for data IN */
+#define COMPOSITE_CDC_CMD_EP                          0x84U  /* EP4 for CDC commands */
 
 //#define COMPOSITE_EP_COUNT                            6
 

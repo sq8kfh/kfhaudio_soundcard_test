@@ -70,8 +70,14 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x01,
 	LOBYTE(COMPOSITE_AUDIOCONTROL_INTERFACE_TOTAL_SIZE),  /* wTotalLength */
 	HIBYTE(COMPOSITE_AUDIOCONTROL_INTERFACE_TOTAL_SIZE),
+#ifdef USB_AUDIO_MIC_ON
+	0x02,                                                 /* bInCollection */
+	COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE,              /* baInterfaceNr 0 */
+	COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE,               /* baInterfaceNr 1 */
+#else
 	0x01,                                                 /* bInCollection */
 	COMPOSITE_AUDIO_OUTPUT_STREAM_INTERFACE,              /* baInterfaceNr */
+#endif
 	//COMPOSITE_AUDIO_INPUT_STREAM_INTERFACE,
 	/* 09 byte*/
 
@@ -94,7 +100,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_AUDIOCONTROL_FEATURE_UNIT_DESC_SIZE,        /* bLength */
 	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
 	AUDIO_CONTROL_FEATURE_UNIT,                           /* bDescriptorSubtype */
-	COMPOSITE_AUDIOCONTROL_FEATURE_UNIT_ID,               /* bUnitID */
+	COMPOSITE_AUDIOCONTROL_SPK_FEATURE_UNIT_ID,           /* bUnitID */
 	COMPOSITE_AUDIOCONTROL_USB_INPUT_TERMINAL_ID,         /* bSourceID */
 	0x01,                                                 /* bControlSize */
 	AUDIO_CONTROL_MUTE,                                   /* bmaControls(0) */
@@ -110,7 +116,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x01, //0x11,                                         /* wTerminalType  0x0301 - Speaker*/
 	0x03, //0x07,
 	0x00,                                                 /* bAssocTerminal */
-	COMPOSITE_AUDIOCONTROL_FEATURE_UNIT_ID,               /* bSourceID */
+	COMPOSITE_AUDIOCONTROL_SPK_FEATURE_UNIT_ID,           /* bSourceID */
 	0x00,                                                 /* iTerminal */
 	/* 09 byte*/
 #ifdef USB_AUDIO_MIC_ON
@@ -118,7 +124,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_AUDIOCONTROL_MIC_INPUT_TERMINAL_DESC_SIZE,  /* bLength */
 	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
 	AUDIO_CONTROL_INPUT_TERMINAL,                         /* bDescriptorSubtype */
-	COMPOSITE_AUDIOCONTROL_MIN_INPUT_TERMINAL_ID,         /* bTerminalID */
+	COMPOSITE_AUDIOCONTROL_MIC_INPUT_TERMINAL_ID,         /* bTerminalID */
 	0x01,                                                 /* wTerminalType  0x0201*/
 	0x02,
 	0x00,                                                 /* bAssocTerminal */
@@ -129,6 +135,18 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x00,                                                 /* iTerminal */
 	/* 12 byte*/
 
+	/* AudioControl - Speaker - Feature Unit Descriptor */
+	COMPOSITE_AUDIOCONTROL_MIC_FEATURE_UNIT_DESC_SIZE,    /* bLength */
+	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
+	AUDIO_CONTROL_FEATURE_UNIT,                           /* bDescriptorSubtype */
+	COMPOSITE_AUDIOCONTROL_MIC_FEATURE_UNIT_ID,           /* bUnitID */
+	COMPOSITE_AUDIOCONTROL_MIC_INPUT_TERMINAL_ID,         /* bSourceID */
+	0x01,                                                 /* bControlSize */
+	AUDIO_CONTROL_MUTE,                                   /* bmaControls(0) */
+	0,                                                    /* bmaControls(1) */
+	0x00,                                                 /* iTerminal */
+	/* 09 byte*/
+
 	/* AudioControl - LineIN - USB Streaming Terminal Descriptor */
 	COMPOSITE_AUDIOCONTROL_USB_OUTPUT_TERMINAL_DESC_SIZE, /* bLength */
 	AUDIO_INTERFACE_DESCRIPTOR_TYPE,                      /* bDescriptorType */
@@ -137,7 +155,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	0x01,                                                 /* wTerminalType AUDIO_TERMINAL_USB_STREAMING   0x0101 */
 	0x01,
 	0x00,                                                 /* bAssocTerminal */
-	COMPOSITE_AUDIOCONTROL_MIN_INPUT_TERMINAL_ID,         /* bSourceID */
+	COMPOSITE_AUDIOCONTROL_MIC_FEATURE_UNIT_ID,           /* bSourceID */
 	0x00,                                                 /* iTerminal */
 	/* 9 byte*/
 #endif
@@ -195,7 +213,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_AUDIOSTREAMING_OUT_ENDPOINT_DESC_SIZE,     /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType */
 	COMPOSITE_AUDIO_OUT_EP,                              /* bEndpointAddress 1 out endpoint*/
-	USBD_EP_TYPE_ISOC | USBD_EP_SYNCH_TYPE_ASYNCHRONOUS, /* bmAttributes */
+	USBD_EP_TYPE_ISOC ,//| USBD_EP_SYNCH_TYPE_ASYNCHRONOUS, /* bmAttributes */
 	(uint8_t)(AUDIO_OUT_MAX_PACKET & 0xFFU),             /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
 	(uint8_t)((AUDIO_OUT_MAX_PACKET >> 8) & 0xFFU),
 	0x01,                                                /* bInterval */
@@ -281,7 +299,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType */
 	COMPOSITE_AUDIO_IN_EP,                               /* bEndpointAddress 1 in endpoint*/
 	USBD_EP_TYPE_ISOC,                                   /* bmAttributes */
-	AUDIO_PACKET_SZE(USBD_AUDIO_FREQ),                   /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
+	(uint8_t)(AUDIO_OUT_PACKET & 0xFFU),                 /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
+	(uint8_t)((AUDIO_OUT_PACKET >> 8) & 0xFFU),
 	0x01,                                                /* bInterval */
 	0x00,                                                /* bRefresh */
 	0x00,                                                /* bSynchAddress */
