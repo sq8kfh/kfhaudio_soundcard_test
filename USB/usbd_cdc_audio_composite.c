@@ -527,9 +527,9 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 
 		if (haudio->synch_feedback_tx_flag == 0U && need_tx == 1) {
 		      /* Get FNSOF. Use volatile for fnsof_new since its address is mapped to a hardware register. */
-		      USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
-		      uint32_t USBx_BASE = (uint32_t)USBx;
-		      uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+		      //USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
+		      //uint32_t USBx_BASE = (uint32_t)USBx;
+		      //uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 
 		      if ((haudio->synch_feedback_fnsof & 0x1) == (fnsof_new & 0x1)) {
 		    	  feedbacktable[0] = haudio->output_synch_feedback;
@@ -543,7 +543,6 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 		    	  haudio->synch_feedback_tx_flag = 1U;
 		      }
 		 }
-
 	}
 	else {
 		last_dma = dma;
@@ -557,18 +556,21 @@ static uint8_t USBD_CDC_Audio_Composite_IsoINIncomplete(USBD_HandleTypeDef *pdev
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
 	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(IN_P_GPIO_Port, IN_P_Pin, GPIO_PIN_SET);
 
-	HAL_GPIO_WritePin(IN_P_GPIO_Port, IN_P_Pin, GPIO_PIN_SET);
+	USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
+	uint32_t USBx_BASE = (uint32_t)USBx;
+	uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 
-	if (haudio->synch_feedback_tx_flag == 1U) {
+	if (haudio->synch_feedback_tx_flag == 1U && (haudio->synch_feedback_fnsof & 0x1) != (fnsof_new & 0x1)) {
 		haudio->synch_feedback_tx_flag = 0U;
 
 		USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
 		uint32_t USBx_BASE = (uint32_t)USBx;
 
-		haudio->synch_feedback_fnsof = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+		haudio->synch_feedback_fnsof = fnsof_new; //(USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 		USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
-
+		HAL_GPIO_WritePin(IN_P_GPIO_Port, IN_P_Pin, GPIO_PIN_SET);
 		need_tx = 1;
 	}
 	return USBD_OK;

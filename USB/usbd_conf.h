@@ -34,7 +34,7 @@
 #define USBD_INTERFACE_STRING_FS                      "AUDIO Interface"
 
 #define USB_SIZ_BOS_DESC                              0x0C
-//#define USB_AUDIO_MIC_ON                              1
+#define USB_AUDIO_MIC_ON                              1
 
 #define COMPOSITE_AUDIO_OUT_EP                        0x01U  /* EP1 for data OUT */
 #define COMPOSITE_AUDIO_OUT_SYNCH_EP                  0x81U  /* EP1 for data IN */
