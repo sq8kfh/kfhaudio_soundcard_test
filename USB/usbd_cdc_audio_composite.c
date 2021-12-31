@@ -98,7 +98,7 @@ static uint8_t USBD_CDC_Audio_Composite_Init (USBD_HandleTypeDef *pdev, uint8_t 
     haudio->offset = AUDIO_OFFSET_UNKNOWN;
     haudio->wr_ptr = 0U;
     haudio->output_synch_feedback = 0xC0000;
-    haudio->synch_feedback_tx_flag = 1;
+    haudio->synch_feedback_tx_inprogress = 1;
 
     /* Initialize the Audio output Hardware layer */
     if (AUDIO_Init_FS(USBD_AUDIO_FREQ, AUDIO_DEFAULT_VOLUME, 0U) != 0) {
@@ -347,30 +347,22 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 	return ret;
 }
 
-volatile uint8_t need_tx = 0;
-volatile uint16_t SOF_num = 0;
 
 static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum) {
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
 	if (epnum == (COMPOSITE_AUDIO_OUT_SYNCH_EP & 0xFU)) {
 		HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_SET);
-		haudio->synch_feedback_tx_flag = 0U;
+		haudio->synch_feedback_tx_inprogress = 0U;
 
 		HAL_GPIO_WritePin(CO_P_GPIO_Port, CO_P_Pin, GPIO_PIN_SET);
 
-		need_tx = 0;
-		SOF_num = 1;
+		haudio->synch_feedback_tx = 0;
+		haudio->synch_feedback_SOF_counter = 1;
 	}
 	else if (epnum == (COMPOSITE_AUDIO_IN_EP & 0xFU)) {
-		//uint32_t c = ((PCD_HandleTypeDef *)(pdev->pData))->IN_ep[COMPOSITE_AUDIO_IN_EP & 0xFU].xfer_count;
-		//	uint32_t l = ((PCD_HandleTypeDef *)(pdev->pData))->IN_ep[COMPOSITE_AUDIO_IN_EP & 0xFU].xfer_len;
-			//((PCD_HandleTypeDef *)(pdev->pData))->IN_ep[COMPOSITE_AUDIO_IN_EP & 0xFU].tx_fifo_num
-			//printf("%lu %lu\r\n", c, l);
-
 		//HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
-		//USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, dummy, AUDIO_OUT_PACKET);
-		//printf("M %lu\r\n", tmp);
+		USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, dummy, AUDIO_OUT_PACKET);
 	}
 	else if (epnum == (COMPOSITE_CDC_IN_EP & 0x0FU)) {
 		USBD_CDC_HandleTypeDef *hcdc = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc;
@@ -426,7 +418,7 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 			AUDIO_AudioCmd_FS(&haudio->buffer[0], AUDIO_TOTAL_BUF_SIZE / 2U, AUDIO_CMD_START);
 
 			haudio->offset = AUDIO_OFFSET_NONE;
-			haudio->synch_feedback_tx_flag = 0U;
+			haudio->synch_feedback_tx_inprogress = 0U;
 		}
 
 		/* Prepare Out endpoint to receive next audio packet */
@@ -454,25 +446,19 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 	return USBD_OK;
 }
 
- uint8_t slow_down_flag = 0;
- uint8_t speed_up_flag = 0;
-
- uint8_t feedbacktable[3];
 
 static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
-	//static uint16_t SOF_num = 0;
 	static uint16_t last_dma = 0;
-	//static uint8_t feedbacktable[3];
-	//static uint8_t slow_down_flag = 0;
-	//static uint8_t speed_up_flag = 0;
+	static uint8_t feedbacktable[3];
+	static uint8_t slow_down_flag = 0;
+	static uint8_t speed_up_flag = 0;
 
 	uint16_t  dma = AUDIO_Get_DMA_Read_Ptr();
 
 	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_RESET);
 
-	USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
-	uint32_t USBx_BASE = (uint32_t)USBx;
+	uint32_t USBx_BASE = (uint32_t)((PCD_HandleTypeDef*)pdev->pData)->Instance;
 	uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 
 	HAL_GPIO_WritePin(CO_P_GPIO_Port, CO_P_Pin, GPIO_PIN_RESET);
@@ -489,9 +475,9 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 	if (haudio->alt_output_setting == 1)
 	{
-		SOF_num++;
-		if (SOF_num == (1 << USBD_AUDIO_FEEDBACK_SOF_RATE) && haudio->offset == AUDIO_OFFSET_NONE) {
-			SOF_num = 0;
+		haudio->synch_feedback_SOF_counter++;
+		if (haudio->synch_feedback_SOF_counter == (1 << USBD_AUDIO_FEEDBACK_SOF_RATE) && haudio->offset == AUDIO_OFFSET_NONE) {
+			haudio->synch_feedback_SOF_counter = 0;
 
 			if (dma > last_dma) {
 				haudio->output_synch_feedback = dma - last_dma;
@@ -516,37 +502,35 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev) {
 
 			haudio->output_synch_feedback <<= 4; // align to the to left of 3-byte
 
-			need_tx = 1;
+			haudio->synch_feedback_tx = 1;
 		}
-		else if (SOF_num == (1 << USBD_AUDIO_FEEDBACK_SOF_RATE) && haudio->offset != AUDIO_OFFSET_NONE) {
-			SOF_num = 0;
-			need_tx = 1;
+		else if (haudio->synch_feedback_SOF_counter == (1 << USBD_AUDIO_FEEDBACK_SOF_RATE) && haudio->offset != AUDIO_OFFSET_NONE) {
+			haudio->synch_feedback_SOF_counter = 0;
+			haudio->synch_feedback_tx = 1;
 		}
 
 		/* Transmit feedback only when the last one is transmitted */
+		if (haudio->synch_feedback_tx_inprogress == 0U && haudio->synch_feedback_tx == 1) {
+		    /* Get FNSOF. Use volatile for fnsof_new since its address is mapped to a hardware register. */
+			uint32_t USBx_BASE = (uint32_t)((PCD_HandleTypeDef*)pdev->pData)->Instance;
+			uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 
-		if (haudio->synch_feedback_tx_flag == 0U && need_tx == 1) {
-		      /* Get FNSOF. Use volatile for fnsof_new since its address is mapped to a hardware register. */
-		      //USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
-		      //uint32_t USBx_BASE = (uint32_t)USBx;
-		      //uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+		    if ((haudio->synch_feedback_fnsof & 0x1) == (fnsof_new & 0x1)) {
+		    	feedbacktable[0] = haudio->output_synch_feedback;
+		    	feedbacktable[1] = haudio->output_synch_feedback >> 8;
+		    	feedbacktable[2] = haudio->output_synch_feedback >> 16;
 
-		      if ((haudio->synch_feedback_fnsof & 0x1) == (fnsof_new & 0x1)) {
-		    	  feedbacktable[0] = haudio->output_synch_feedback;
-		    	  feedbacktable[1] = haudio->output_synch_feedback >> 8;
-		    	  feedbacktable[2] = haudio->output_synch_feedback >> 16;
+		    	HAL_GPIO_WritePin(TX_P_GPIO_Port, TX_P_Pin, GPIO_PIN_SET);
+		    	USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP, feedbacktable, 3);
 
-		    	  HAL_GPIO_WritePin(TX_P_GPIO_Port, TX_P_Pin, GPIO_PIN_SET);
-		    	  USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP, feedbacktable, 3);
-
-		    	  /* Block transmission until it's finished. */
-		    	  haudio->synch_feedback_tx_flag = 1U;
-		      }
-		 }
+		    	/* Block transmission until it's finished. */
+		    	haudio->synch_feedback_tx_inprogress= 1U;
+		    }
+		}
 	}
 	else {
 		last_dma = dma;
-		SOF_num = 0;
+		haudio->synch_feedback_SOF_counter = 0;
 	}
 	return USBD_OK;
 }
@@ -556,22 +540,17 @@ static uint8_t USBD_CDC_Audio_Composite_IsoINIncomplete(USBD_HandleTypeDef *pdev
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
 	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, GPIO_PIN_SET);
-	//HAL_GPIO_WritePin(IN_P_GPIO_Port, IN_P_Pin, GPIO_PIN_SET);
 
-	USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
-	uint32_t USBx_BASE = (uint32_t)USBx;
+	uint32_t USBx_BASE = (uint32_t)((PCD_HandleTypeDef*)pdev->pData)->Instance;
 	uint32_t volatile fnsof_new = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
 
-	if (haudio->synch_feedback_tx_flag == 1U && (haudio->synch_feedback_fnsof & 0x1) != (fnsof_new & 0x1)) {
-		haudio->synch_feedback_tx_flag = 0U;
+	if (haudio->synch_feedback_tx_inprogress == 1U && (haudio->synch_feedback_fnsof & 0x1) != (fnsof_new & 0x1)) {
+		haudio->synch_feedback_tx_inprogress = 0U;
+		haudio->synch_feedback_tx = 1;
 
-		USB_OTG_GlobalTypeDef* USBx = USB_OTG_HS;
-		uint32_t USBx_BASE = (uint32_t)USBx;
-
-		haudio->synch_feedback_fnsof = fnsof_new; //(USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF) >> 8;
+		haudio->synch_feedback_fnsof = fnsof_new;
 		USBD_LL_FlushEP(pdev, COMPOSITE_AUDIO_OUT_SYNCH_EP);
 		HAL_GPIO_WritePin(IN_P_GPIO_Port, IN_P_Pin, GPIO_PIN_SET);
-		need_tx = 1;
 	}
 	return USBD_OK;
 }
@@ -692,7 +671,7 @@ static void AUDIO_OUT_StopAndReset(USBD_HandleTypeDef* pdev)
 {
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
 
-	haudio->synch_feedback_tx_flag = 1U;
+	haudio->synch_feedback_tx_inprogress = 1U;
 	haudio->offset = AUDIO_OFFSET_UNKNOWN;
 	haudio->wr_ptr = 0U;
 	haudio->output_synch_feedback = 0xC0000;
@@ -719,8 +698,8 @@ static void AUDIO_OUT_Restart(USBD_HandleTypeDef* pdev)
 	AUDIO_Init_FS(USBD_AUDIO_FREQ, AUDIO_DEFAULT_VOLUME, 0U);
 
 	haudio->output_synch_feedback = 0xC0000;
-	haudio->synch_feedback_tx_flag = 0U;
-	need_tx = 1;
+	haudio->synch_feedback_tx_inprogress = 0U;
+	haudio->synch_feedback_tx = 1;
 }
 
 

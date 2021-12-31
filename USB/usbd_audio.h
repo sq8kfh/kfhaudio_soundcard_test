@@ -123,8 +123,10 @@ typedef struct
   AUDIO_OffsetTypeDef offset;
   uint16_t wr_ptr;
   uint32_t output_synch_feedback;
-  volatile uint8_t synch_feedback_tx_flag;
+  volatile uint8_t synch_feedback_tx_inprogress;
+  uint8_t synch_feedback_tx;
   volatile uint32_t synch_feedback_fnsof;
+  uint16_t synch_feedback_SOF_counter;
   USBD_AUDIO_ControlTypeDef control;
 } USBD_AUDIO_HandleTypeDef;
 

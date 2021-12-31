@@ -109,7 +109,7 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t usb = haudio->wr_ptr;
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-		printf("H %u %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
+		printf("H %u 0x%lx %u %u %u\r\n", haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
 	}
 }
 
@@ -123,7 +123,7 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t usb = haudio->wr_ptr;
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
-		printf("F %u %u %u %u 0x%lx %u %u %u\r\n", slow_down_flag, speed_up_flag, haudio->synch_feedback_tx_flag, haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
+		printf("F %u 0x%lx %u %u %u\r\n", haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
 	}
 }
 
