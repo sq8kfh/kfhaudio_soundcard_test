@@ -42,7 +42,9 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2S_HandleTypeDef hi2s2;
 I2S_HandleTypeDef hi2s3;
+DMA_HandleTypeDef hdma_spi2_rx;
 DMA_HandleTypeDef hdma_spi3_tx;
 
 UART_HandleTypeDef huart3;
@@ -60,6 +62,7 @@ static void MX_USART3_UART_Init(void);
 static void MX_DMA_Init(void);
 static void MX_I2S3_Init(void);
 static void MX_USB_OTG_HS_PCD_Init(void);
+static void MX_I2S2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -101,7 +104,7 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	USBD_AUDIO_HandleTypeDef *haudio;
+	/*USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceHS.pClassData)->haudio;
 	if (haudio) {
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
@@ -110,12 +113,12 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
 		printf("H %u 0x%lx %u %u %u\r\n", haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
-	}
+	}*/
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	USBD_AUDIO_HandleTypeDef *haudio;
+	/*USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceHS.pClassData)->haudio;
 	if (haudio) {
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
@@ -124,8 +127,10 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
 		printf("F %u 0x%lx %u %u %u\r\n", haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
-	}
+	}*/
 }
+
+static int16_t audio_in[192 * 80];
 
 /* USER CODE END 0 */
 
@@ -160,6 +165,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_DMA_Init();
   MX_I2S3_Init();
+  MX_I2S2_Init();
   /* USER CODE BEGIN 2 */
   printf("Starting usb...\r\n");
   MX_USB_DEVICE_Init();
@@ -229,6 +235,39 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief I2S2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2S2_Init(void)
+{
+
+  /* USER CODE BEGIN I2S2_Init 0 */
+
+  /* USER CODE END I2S2_Init 0 */
+
+  /* USER CODE BEGIN I2S2_Init 1 */
+
+  /* USER CODE END I2S2_Init 1 */
+  hi2s2.Instance = SPI2;
+  hi2s2.Init.Mode = I2S_MODE_MASTER_RX;
+  hi2s2.Init.Standard = I2S_STANDARD_PHILIPS;
+  hi2s2.Init.DataFormat = I2S_DATAFORMAT_16B;
+  hi2s2.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
+  hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_48K;
+  hi2s2.Init.CPOL = I2S_CPOL_LOW;
+  hi2s2.Init.ClockSource = I2S_CLOCK_PLL;
+  if (HAL_I2S_Init(&hi2s2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2S2_Init 2 */
+
+  /* USER CODE END I2S2_Init 2 */
+
 }
 
 /**
@@ -342,6 +381,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
@@ -359,6 +401,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();

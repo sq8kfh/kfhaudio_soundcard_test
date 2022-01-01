@@ -3,8 +3,9 @@
 
 
 extern USBD_HandleTypeDef hUsbDeviceHS;
-extern I2S_HandleTypeDef hi2s3;
-//extern I2C_HandleTypeDef hi2c1;
+extern I2S_HandleTypeDef hi2s2; // in - MIC/LINE
+extern I2S_HandleTypeDef hi2s3; // out - SPK
+
 
 #define AUDIO_I2C_ADDR	0x94
 
@@ -153,8 +154,32 @@ int8_t AUDIO_GetState_FS(void)
   /* USER CODE END 6 */
 }
 
+
+int8_t AUDIO_Start_Play(uint8_t *pbuf, uint32_t size)
+{
+
+}
+
+
+int8_t AUDIO_Stop_Play(void)
+{
+
+}
+
+
+int8_t AUDIO_Start_Record(uint8_t *pbuf, uint32_t size)
+{
+	HAL_I2S_Receive_DMA(&hi2s2, pbuf, size/2); //half word mode
+}
+
+
+int8_t AUDIO_Stop_Record(void)
+{
+	HAL_I2S_DMAStop(&hi2s2);
+}
+
+
 uint16_t AUDIO_Get_DMA_Read_Ptr(void)
 {
 	return ((AUDIO_TOTAL_BUF_SIZE >> 1) -__HAL_DMA_GET_COUNTER(hi2s3.hdmatx)) << 1U; // DMA work in half word mode and counts down
 }
-

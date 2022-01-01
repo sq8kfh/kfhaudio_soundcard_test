@@ -118,7 +118,6 @@ typedef struct
 typedef struct
 {
   uint32_t alt_output_setting;
-  uint32_t alt_input_setting;
   uint8_t buffer[AUDIO_TOTAL_BUF_SIZE + AUDIO_OUT_MAX_PACKET];
   AUDIO_OffsetTypeDef offset;
   uint16_t wr_ptr;
@@ -127,6 +126,11 @@ typedef struct
   uint8_t synch_feedback_tx;
   volatile uint32_t synch_feedback_fnsof;
   uint16_t synch_feedback_SOF_counter;
+
+  uint32_t alt_input_setting;
+  uint8_t input_buffer[AUDIO_TOTAL_BUF_SIZE];
+  uint16_t rd_ptr;
+
   USBD_AUDIO_ControlTypeDef control;
 } USBD_AUDIO_HandleTypeDef;
 

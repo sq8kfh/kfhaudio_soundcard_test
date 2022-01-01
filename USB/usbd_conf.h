@@ -89,20 +89,22 @@
 
 /* DEBUG macros */
 
-#if (USBD_DEBUG_LEVEL > 0)
-#define USBD_UsrLog(...)    printf(__VA_ARGS__);\
-                            printf("\r\n");
-#else
-#define USBD_UsrLog(...)
-#endif
 
-#if (USBD_DEBUG_LEVEL > 1)
+#if (USBD_DEBUG_LEVEL > 0)
 
 #define USBD_ErrLog(...)    printf("ERROR: ") ;\
                             printf(__VA_ARGS__);\
                             printf("\r\n");
 #else
 #define USBD_ErrLog(...)
+#endif
+
+#if (USBD_DEBUG_LEVEL > 1)
+#define USBD_InfLog(...)    printf("INFO : ") ;\
+                            printf(__VA_ARGS__);\
+                            printf("\r\n");
+#else
+#define USBD_InfLog(...)
 #endif
 
 #if (USBD_DEBUG_LEVEL > 2)
@@ -113,13 +115,6 @@
 #define USBD_DbgLog(...)
 #endif
 
-#if (USBD_DEBUG_LEVEL > 3)
-#define USBD_Dbg2Log(...)    printf("DEBUG : ") ;\
-                            printf(__VA_ARGS__);\
-                            printf("\r\n");
-#else
-#define USBD_Dbg2Log(...)
-#endif
 
 void *USBD_static_malloc(uint32_t size) __attribute__((deprecated));
 void USBD_static_free(void *p) __attribute__((deprecated));
