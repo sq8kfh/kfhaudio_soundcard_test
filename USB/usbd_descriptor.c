@@ -213,7 +213,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	COMPOSITE_AUDIOSTREAMING_OUT_ENDPOINT_DESC_SIZE,     /* bLength */
 	USB_DESC_TYPE_ENDPOINT,                              /* bDescriptorType */
 	COMPOSITE_AUDIO_OUT_EP,                              /* bEndpointAddress 1 out endpoint*/
-	USBD_EP_TYPE_ISOC ,//| USBD_EP_SYNCH_TYPE_ASYNCHRONOUS, /* bmAttributes */
+	USBD_EP_TYPE_ISOC | USBD_EP_SYNCH_TYPE_ASYNCHRONOUS, /* bmAttributes */
 	(uint8_t)(AUDIO_OUT_MAX_PACKET & 0xFFU),             /* wMaxPacketSize in Bytes (Freq(Samples)*2(Stereo)*2(HalfWord)) */
 	(uint8_t)((AUDIO_OUT_MAX_PACKET >> 8) & 0xFFU),
 	0x01,                                                /* bInterval */
