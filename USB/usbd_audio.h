@@ -71,9 +71,9 @@
 #define AUDIO_OUT_TC                                  0x01U
 #define AUDIO_IN_TC                                   0x02U
 
-
-#define AUDIO_OUT_PACKET                              (uint16_t)(((USBD_AUDIO_FREQ * 2U * 2U) / 1000U))
-#define AUDIO_OUT_MAX_PACKET                          (uint16_t)(AUDIO_OUT_PACKET + 4U)
+#define AUDIO_SAMPLE_SIZE                             (4U * 2U)
+#define AUDIO_OUT_PACKET                              (uint16_t)(((USBD_AUDIO_FREQ * AUDIO_SAMPLE_SIZE) / 1000U))
+#define AUDIO_OUT_MAX_PACKET                          (uint16_t)(AUDIO_OUT_PACKET )
 #define AUDIO_DEFAULT_VOLUME                          70U
 
 /* Number of sub-packets in the audio transfer buffer. You can modify this value but always make sure

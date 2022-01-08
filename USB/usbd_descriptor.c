@@ -202,8 +202,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	AUDIO_STREAMING_FORMAT_TYPE,                          /* bDescriptorSubtype */
 	AUDIO_FORMAT_TYPE_I,                                  /* bFormatType */
 	0x02,                                                 /* bNrChannels */
-	0x02,                                                 /* bSubFrameSize :  2 Bytes per frame (16bits) */
-	16,                                                   /* bBitResolution (16-bits per sample) */
+	0x04,                                                 /* bSubFrameSize :  4 Bytes per frame (32bits) */
+	24,                                                   /* bBitResolution (24-bits per sample) */
 	0x01,                                                 /* bSamFreqType only one frequency supported */
 	AUDIO_SAMPLE_FREQ(USBD_AUDIO_FREQ),                   /* Audio sampling frequency coded on 3 bytes */
 	/* 11 byte*/
@@ -287,8 +287,8 @@ __ALIGN_BEGIN uint8_t USBD_CDC_Audio_Composite_Descriptor[CDC_AUDIO_COMPOSITE_DE
 	AUDIO_STREAMING_FORMAT_TYPE,                         /* bDescriptorSubtype */
 	AUDIO_FORMAT_TYPE_I,                                 /* bFormatType */
 	0x02,                                                /* bNrChannels */
-	0x02,                                                /* bSubFrameSize :  2 Bytes per frame (16bits) */
-	16,                                                  /* bBitResolution (16-bits per sample) */
+	0x04,                                                /* bSubFrameSize :  4 Bytes per frame (32bits) */
+	24,                                                  /* bBitResolution (24-bits per sample) */
 	0x01,                                                /* bSamFreqType only one frequency supported */
 	AUDIO_SAMPLE_FREQ(USBD_AUDIO_FREQ),                  /* Audio sampling frequency coded on 3 bytes */
 	/* 11 byte*/

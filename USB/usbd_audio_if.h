@@ -15,5 +15,6 @@ int8_t AUDIO_Stop_Play(void);
 int8_t AUDIO_Start_Record(uint8_t *pbuf, uint32_t size);
 int8_t AUDIO_Stop_Record(void);
 uint16_t AUDIO_Get_DMA_Read_Ptr(void);
+uint16_t AUDIO_Get_DMA_Write_Ptr(void);
 
 #endif /* __USBD_AUDIO_IF_H__ */

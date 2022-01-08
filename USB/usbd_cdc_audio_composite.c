@@ -334,6 +334,13 @@ static uint8_t USBD_CDC_Audio_Composite_Setup (USBD_HandleTypeDef *pdev, USBD_Se
 }
 
 
+static inline void swap(uint16_t *a, uint16_t *b) {
+	uint16_t tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+
+
 static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
 	USBD_AUDIO_HandleTypeDef *haudio = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->haudio;
@@ -348,12 +355,30 @@ static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_
 		haudio->synch_feedback_SOF_counter = 1;
 	}
 	else if (epnum == (COMPOSITE_AUDIO_IN_EP & 0xFU)) {
-		haudio->rd_ptr += AUDIO_OUT_PACKET;
-		if (haudio->rd_ptr >= AUDIO_TOTAL_BUF_SIZE) {
-			haudio->rd_ptr = 0;
-		}
+		uint16_t  dma = AUDIO_Get_DMA_Write_Ptr();
+		uint16_t sync_diff = haudio->rd_ptr < dma ? dma - haudio->rd_ptr : AUDIO_TOTAL_BUF_SIZE - haudio->rd_ptr + dma;
 
-		USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, &haudio->input_buffer[haudio->rd_ptr], AUDIO_OUT_PACKET);
+		uint16_t byte_count = sync_diff < AUDIO_OUT_PACKET ? sync_diff : AUDIO_OUT_PACKET;
+
+		byte_count &= 0xfff8U;
+
+		//uint16_t byte_count = AUDIO_OUT_PACKET;
+		if (byte_count) {
+			for (uint16_t i = 0; i < byte_count; i += 4) {
+				uint16_t tmp = haudio->rd_ptr + i;
+				swap(&haudio->input_buffer[tmp], &haudio->input_buffer[tmp+2]);
+			}
+
+			USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, &haudio->input_buffer[haudio->rd_ptr], byte_count);
+
+			haudio->rd_ptr += byte_count;
+			if (haudio->rd_ptr >= AUDIO_TOTAL_BUF_SIZE) {
+				haudio->rd_ptr = 0;
+			}
+		}
+		else {
+			USBD_LL_Transmit(pdev, COMPOSITE_AUDIO_IN_EP, dummy_input, AUDIO_OUT_PACKET);
+		}
 	}
 	else if (epnum == (COMPOSITE_CDC_IN_EP & 0x0FU)) {
 		USBD_CDC_HandleTypeDef *hcdc = &((USBD_Composite_HandleTypeDef *)pdev->pClassData)->hcdc;
@@ -381,6 +406,7 @@ static uint8_t USBD_CDC_Audio_Composite_DataIn (USBD_HandleTypeDef *pdev, uint8_
 }
 
 
+
 static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
 	if (epnum == (AUDIO_OUT_EP & 0xFU)) {
@@ -388,6 +414,11 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 
 		/* Get received data packet length */
 		uint16_t PacketSize = (uint16_t)USBD_LL_GetRxDataSize(pdev, epnum);
+
+		for (uint16_t i = 0; i < PacketSize; i += 4) {
+			uint16_t tmp = haudio->wr_ptr + i;
+			swap(&haudio->buffer[tmp], &haudio->buffer[tmp+2]);
+		}
 
 		/* Increment the Buffer pointer or roll it back when all buffers are full */
 		haudio->wr_ptr += PacketSize;
@@ -399,8 +430,8 @@ static uint8_t USBD_CDC_Audio_Composite_DataOut (USBD_HandleTypeDef *pdev, uint8
 				haudio->buffer[i] = haudio->buffer[i + AUDIO_TOTAL_BUF_SIZE];
 			}
 		}
-		if (haudio->offset == AUDIO_OFFSET_UNKNOWN && haudio->wr_ptr >= AUDIO_TOTAL_BUF_SIZE / 2U) {
-			AUDIO_AudioCmd_FS(&haudio->buffer[0], AUDIO_TOTAL_BUF_SIZE / 2U, AUDIO_CMD_START);
+		if (haudio->offset == AUDIO_OFFSET_UNKNOWN && haudio->wr_ptr >= AUDIO_TOTAL_BUF_SIZE / 4U) {
+			AUDIO_AudioCmd_FS(&haudio->buffer[0], AUDIO_TOTAL_BUF_SIZE, AUDIO_CMD_START);
 
 			haudio->offset = AUDIO_OFFSET_NONE;
 			haudio->synch_feedback_tx_inprogress = 0U;
@@ -471,14 +502,14 @@ static uint8_t USBD_CDC_Audio_Composite_SOF(USBD_HandleTypeDef *pdev)
 			}
 
 			last_dma = dma;
-			haudio->output_synch_feedback <<= (8 - USBD_AUDIO_FEEDBACK_SOF_RATE);
+			haudio->output_synch_feedback <<= (7 - USBD_AUDIO_FEEDBACK_SOF_RATE);
 
 			uint16_t sync_diff = dma < haudio->wr_ptr ? haudio->wr_ptr - dma : AUDIO_TOTAL_BUF_SIZE - dma + haudio->wr_ptr;
 
-			if (sync_diff < (AUDIO_TOTAL_BUF_SIZE/2 - 2000) || ((sync_diff < AUDIO_TOTAL_BUF_SIZE/2) && speed_up_flag)) speed_up_flag = 1;
+			if (sync_diff < (AUDIO_TOTAL_BUF_SIZE/2 - 4000) || ((sync_diff < AUDIO_TOTAL_BUF_SIZE/2) && speed_up_flag)) speed_up_flag = 1;
 			else speed_up_flag = 0;
 
-			if (sync_diff > (AUDIO_TOTAL_BUF_SIZE/2 + 2000) || ((sync_diff > AUDIO_TOTAL_BUF_SIZE/2) && slow_down_flag)) slow_down_flag = 1;
+			if (sync_diff > (AUDIO_TOTAL_BUF_SIZE/2 + 4000) || ((sync_diff > AUDIO_TOTAL_BUF_SIZE/2) && slow_down_flag)) slow_down_flag = 1;
 			else slow_down_flag = 0;
 
 			if (speed_up_flag) haudio->output_synch_feedback += (1 << 8); //0.25kHz

@@ -75,7 +75,7 @@ int __io_putchar(int ch) {
 	return ch;
 }
 
-#define BUFFER_SIZE		9600
+#define BUFFER_SIZE		48
 
 static int16_t audio_data[2 * BUFFER_SIZE];
 
@@ -83,8 +83,9 @@ void play_tone(void)
 {
     for (int i = 0; i < BUFFER_SIZE; i++) {
         int16_t value = (int16_t)(32000.0 * sin(2.0 * M_PI * i / 48.0));
-        audio_data[i * 2] = value;
-        audio_data[i * 2 + 1] = value;
+        audio_data[i * 2] = 0x00ff;
+        audio_data[i * 2 + 1] = 0x00ff;
+        //3 4 1 2
     }
 
     HAL_I2S_Transmit_DMA(&hi2s3, audio_data, 2*BUFFER_SIZE);
@@ -104,7 +105,7 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
 
 void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	/*USBD_AUDIO_HandleTypeDef *haudio;
+	USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceHS.pClassData)->haudio;
 	if (haudio) {
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
@@ -113,12 +114,12 @@ void HAL_I2S_TxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
 		printf("H %u 0x%lx %u %u %u\r\n", haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
-	}*/
+	}
 }
 
 void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
-	/*USBD_AUDIO_HandleTypeDef *haudio;
+	USBD_AUDIO_HandleTypeDef *haudio;
 	haudio = &((USBD_Composite_HandleTypeDef *)hUsbDeviceHS.pClassData)->haudio;
 	if (haudio) {
 		uint16_t dma = AUDIO_TOTAL_BUF_SIZE / 2 - __HAL_DMA_GET_COUNTER(hi2s->hdmatx);
@@ -127,7 +128,7 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 		uint16_t sync_diff = dma < usb ? usb - dma : AUDIO_TOTAL_BUF_SIZE - dma + usb;
 
 		printf("F %u 0x%lx %u %u %u\r\n", haudio->synch_feedback_fnsof, haudio->output_synch_feedback, sync_diff, dma, usb);
-	}*/
+	}
 }
 
 static int16_t audio_in[192 * 80];
@@ -255,7 +256,7 @@ static void MX_I2S2_Init(void)
   hi2s2.Instance = SPI2;
   hi2s2.Init.Mode = I2S_MODE_MASTER_RX;
   hi2s2.Init.Standard = I2S_STANDARD_PHILIPS;
-  hi2s2.Init.DataFormat = I2S_DATAFORMAT_16B;
+  hi2s2.Init.DataFormat = I2S_DATAFORMAT_24B;
   hi2s2.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
   hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_48K;
   hi2s2.Init.CPOL = I2S_CPOL_LOW;
@@ -288,7 +289,7 @@ static void MX_I2S3_Init(void)
   hi2s3.Instance = SPI3;
   hi2s3.Init.Mode = I2S_MODE_MASTER_TX;
   hi2s3.Init.Standard = I2S_STANDARD_PHILIPS;
-  hi2s3.Init.DataFormat = I2S_DATAFORMAT_16B;
+  hi2s3.Init.DataFormat = I2S_DATAFORMAT_24B;
   hi2s3.Init.MCLKOutput = I2S_MCLKOUTPUT_DISABLE;
   hi2s3.Init.AudioFreq = I2S_AUDIOFREQ_48K;
   hi2s3.Init.CPOL = I2S_CPOL_LOW;
@@ -382,7 +383,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 5, 0);

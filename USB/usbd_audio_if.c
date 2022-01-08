@@ -84,7 +84,7 @@ int8_t AUDIO_AudioCmd_FS(uint8_t* pbuf, uint32_t size, uint8_t cmd)
   switch(cmd)
   {
     case AUDIO_CMD_START:
-    	HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)pbuf, size);
+    	HAL_I2S_Transmit_DMA(&hi2s3, (uint16_t*)pbuf, size/4);
     break;
 
     case AUDIO_CMD_PLAY:
@@ -169,7 +169,7 @@ int8_t AUDIO_Stop_Play(void)
 
 int8_t AUDIO_Start_Record(uint8_t *pbuf, uint32_t size)
 {
-	HAL_I2S_Receive_DMA(&hi2s2, pbuf, size/2); //half word mode
+	HAL_I2S_Receive_DMA(&hi2s2, pbuf, size/4); //half word mode
 }
 
 
@@ -182,4 +182,9 @@ int8_t AUDIO_Stop_Record(void)
 uint16_t AUDIO_Get_DMA_Read_Ptr(void)
 {
 	return ((AUDIO_TOTAL_BUF_SIZE >> 1) -__HAL_DMA_GET_COUNTER(hi2s3.hdmatx)) << 1U; // DMA work in half word mode and counts down
+}
+
+uint16_t AUDIO_Get_DMA_Write_Ptr(void)
+{
+	return ((AUDIO_TOTAL_BUF_SIZE >> 1) -__HAL_DMA_GET_COUNTER(hi2s2.hdmarx)) << 1U; // DMA work in half word mode and counts down
 }
